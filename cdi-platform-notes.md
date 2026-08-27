@@ -1,7 +1,7 @@
 # CD-i platform notes — a checklist for the next disc
 
 A running checklist, carried from one CD-i documentation pipeline to the next
-and added to by each. It now covers **three discs, four years and two
+and added to by each. It now covers **four discs, four years and two
 continents apart**:
 
 - **Ultra CD-i Soccer** (Krisalis / Philips, UK, 1997) — a game: 144 small
@@ -14,23 +14,29 @@ continents apart**:
   America, USA, 1993) — a streaming game: **14 files in a flat root**, 77 % of
   a CD, 99.7 % of its bytes in five real-time files, and half the disc
   deliberately empty.
+- **Merlin's Apprentice** (Philips Interactive Media of America, USA, 1995) — a
+  puzzle game on a third-party runtime: 18 files in a flat root, 39.5 % of a CD,
+  everything the program owns inside one 8 MB container pressed three times, and
+  **the linker's symbol file left in the root**.
 
 They have almost nothing in common at the content level, which makes the things
-they *do* share worth trusting. Those are marked **[all]** when all three agree
-and **[2 of 3]** when two do. Findings from only one disc are named, and are the
-ones to test rather than assume.
+they *do* share worth trusting. Those are marked **[all]** when all four agree
+and **[N of 4]** when fewer do. Findings from only one disc are named, and are
+the ones to test rather than assume.
 
 The tools referenced live in the pipeline repositories:
 
 - [cdi-ultracdisoccer-doc](https://github.com/vs-sr-dev/cdi-ultracdisoccer-doc)
 - [cdi-origami-doc](https://github.com/vs-sr-dev/cdi-origami-doc)
 - [cdi-linkthefacesofevil-doc](https://github.com/vs-sr-dev/cdi-linkthefacesofevil-doc)
+- [cdi-merlinsapprentice-doc](https://github.com/vs-sr-dev/cdi-merlinsapprentice-doc)
 
 `cdilib.py`, `cdifs.py`, `cdihead.py`, `os9mod.py`, `cdistrings.py`,
-`cdiaudio.py`, `cdidyuv.py`, `cdirta.py`, `cdipic.py`, `cdicensus.py` and
-`cdisym.py` are platform-general and should work unmodified on another disc.
-`cdigfx.py`, `cdispr.py`, `cditeams.py`, `cdipf.py` and `cdianim.py` carry
-title-specific tables and are worth reading rather than running.
+`cdiaudio.py`, `cdidyuv.py`, `cdirta.py`, `cdipic.py`, `cdicensus.py`,
+`cdisym.py` and `cdistb.py` are platform-general and should work unmodified on
+another disc. `cdigfx.py`, `cdispr.py`, `cditeams.py`, `cdipf.py`,
+`cdianim.py`, `cdibolt.py`, `cditoc.py` and `cdirtf.py` carry title-specific
+tables and are worth reading rather than running.
 
 **This document is the canonical copy.** Pipelines should link to it rather
 than fork it.
@@ -64,9 +70,12 @@ Submode bits: `0x01` EOR, `0x02` video, `0x04` audio, `0x08` data, `0x10`
 trigger, `0x20` Form 2, `0x40` real-time, `0x80` EOF.
 
 **Note the capacity used before anything else.** A CD holds about 333,000
-sectors. Soccer uses 7,875 of them, Link 255,924, Origami 326,400. That one
-number sets your expectations for everything that follows: a disc at 2 % of
-capacity will have dead files lying around, and a disc at 98 % will not.
+sectors. Soccer uses 7,875 of them, Merlin 131,610, Link 255,924, Origami
+326,400. That one number sets your expectations for everything that follows: a
+disc at 2 % of capacity will have dead files lying around, and a disc at 98 %
+will not. The middle of the range is its own signal — Merlin, at 39.5 %, has no
+dead files at all but spends 7.9 % of the pressing on two redundant copies of
+one library, which is what having room and no reason to economise looks like.
 
 ---
 
@@ -90,7 +99,7 @@ zeroes. Test, in this order:
    stream (x^15 + x + 1, preset `$0001`, LSB first, reset per sector), take
    bytes 12.. to line up with Form 2 user data, and XOR. If it comes out zero,
    the region is *scrambled* zeroes.
-3. **Does the XOR produce something structured?** On all three discs a large
+3. **Does the XOR produce something structured?** On all four discs a large
    part of it became 16-bit little-endian PCM.
 
 Signals that a region is real audio rather than noise:
@@ -104,10 +113,10 @@ Signals that a region is real audio rather than noise:
 inherited, not earned.** Verify it on your disc before writing the word "audio"
 down: compute the smoothness ratio, check L against R, and take an FFT.
 
-**[all]** **Compare the head against the tail.** On all three discs the tail
+**[all]** **Compare the head against the tail.** On all four discs the tail
 padding is *plain* zeroes while the head padding is *scrambled*. Two filler
 mechanisms in one image means two different tools touched it, and it has now
-held on three unrelated pressings.
+held on four unrelated pressings.
 
 **Link has a third mechanism**: four sectors at 255,770–255,773, 2,324 bytes
 each, **every byte `0x20`** — ASCII spaces. Not zero, not scrambled zero.
@@ -120,13 +129,16 @@ the region, not the beginning:
 Origami   0-15 zeroes, 16-17 volume descriptors, 18-2267 audio  (2,250 sectors)
 Link      0-15 zeroes, 16-17 volume descriptors, 18 zero,
                                                 19-2268 audio  (2,250 sectors)
+Merlin    0-15 zeroes, 16-17 volume descriptors, 18 zero,
+                                                19-2268 audio  (2,250 sectors)
 Soccer    a mix: 1,064 sectors of scrambled zero, 1,203 of PCM
 ```
 
-On the two 1993 discs the audio is **exactly 2,250 sectors ending immediately
-before the path table**.
+On three of the four discs the audio is **exactly 2,250 sectors ending
+immediately before the path table**, and Merlin's layout is Link's to the
+sector — two years later.
 
-### The head-region audio is the same recording on two unrelated discs
+### The head-region audio is the same recording on three unrelated discs
 
 This is the strongest result the pipelines have produced, and it was found by
 comparing rather than by analysing.
@@ -134,38 +146,54 @@ comparing rather than by analysing.
 *Link: The Faces of Evil* (USA, Animation Magic, Philips Interactive Media of
 America) and *Origami* (Netherlands, EagleVision) share **no developer, no
 publisher, no continent and no content**. Descramble both head regions and
-they are **byte-identical**:
+they are **byte-identical**. *Merlin's Apprentice*, mastered **two years
+later**, makes it three:
 
 ```
 Link     sectors 19-2268    5,229,000 B    md5 a0ed87f2e98b43f91281d16390fb178b
 Origami  sectors 18-2267    5,229,000 B    md5 a0ed87f2e98b43f91281d16390fb178b
+Merlin   sectors 19-2268    5,229,000 B    md5 a0ed87f2e98b43f91281d16390fb178b
 ```
 
 All 5,229,000 bytes. Same MD5. **The recording is not title content — it is an
 artefact of the CD-i authoring chain**, laid down by whatever tool wrote the
-pre-file-system region on both 1993 masters.
+pre-file-system region — and it was still being laid down in **January 1995**,
+not only on the 1993 masters. Whatever wrote it stayed in service for at least
+two years and across at least two development houses.
 
-*Ultra CD-i Soccer*, four years later, carries a **different** recording in the
-same place — two mono clips of 7.41 s and 8.31 s, bit-identical left and right,
+*Ultra CD-i Soccer*, in 1997, carries a **different** recording in the same
+place — two mono clips of 7.41 s and 8.31 s, bit-identical left and right,
 fundamentals near 151 and 161 Hz. No 512-byte run of one appears in the other.
 
-So: whatever the filler is, it changed between 1993 and 1997, or between
-mastering facilities. **Hash the descrambled head region of every new disc and
-compare it against both** before spending any time analysing it. That is a
-thirty-second check and it may answer the question outright.
+So: the filler changed somewhere between 1995 and 1997, or between mastering
+facilities. **Hash the descrambled head region of every new disc and compare it
+against both** before spending any time analysing it. That is a thirty-second
+check, it has now answered the question outright three times, and the window it
+covers is wider than the first two discs suggested.
 
-The 1993 recording, measured:
+The 1993–95 recording, measured:
 
 ```
-29.39 s at 44,100 Hz stereo      1,296,000 frames
-smoothness ratio                     0.124
-peak                                23,345
-L == R exactly                        1.40 % of frames
-corr(L, R)                           0.9988
-fundamental                       169-171 Hz, drifting
-second harmonic                   339-341 Hz
-one silence                        8.6-8.9 s, so two takes
+29.64 s at 44,100 Hz stereo      1,307,250 frames   (2,324 B/sector)
+mean |x|                               814.3
+mean |x[k] - x[k-1]|, boundaries excluded   123.4
+peak                                  23,345
+L == R exactly                          1.40 % of frames
+corr(L, R)                             0.9988
+fundamental                         169-171 Hz, drifting
+second harmonic                     339-341 Hz
+one silence                          8.6-8.9 s, so two takes
 ```
+
+*(Two corrections to an earlier revision of this block, both found by measuring
+the identical bytes on Merlin. The duration was given as 29.39 s and
+1,296,000 frames, which is what a **2,304**-byte-per-sector extraction yields;
+the lag analysis below needs the full **2,324** bytes of Form 2 user data, which
+gives 581 frames per sector and 29.64 s. And the "smoothness ratio 0.124" was
+quoted without its denominator — 123.4 over neither mean |x| (814.3, ratio
+0.152) nor RMS (1,736.2, ratio 0.071) reproduces it. **Quote the two means, not
+the ratio.** The screening rule is unaffected: a signal is plausibly audio when
+mean |x[k] - x[k-1]| is well below mean |x|, and noise when it is not.)*
 
 A drifting ~170 Hz fundamental with strong harmonics is what a male speaking
 voice looks like, and 29 seconds in two takes is what a slate or an
@@ -174,13 +202,13 @@ only ears can close.
 
 ### Why it is scrambled: the mechanism, and how many bytes are lost
 
-Origami worked this out and Link confirms it on identical data.
+Origami worked this out, and Link and Merlin confirm it on identical data.
 
-**[2 of 3]** The head sectors have correct sync, a correct MSF header, a valid
-subheader — and a **wrong EDC on every single one**. The subheader is
-`00 00 20 00` on all 2,250 sectors of both 1993 discs: Form 2 with none of the
-data, audio or video bits set, a sector declaring itself to be of no type at
-all.
+**[3 of 4]** The head sectors have correct sync, a correct MSF header, a valid
+subheader — and a **wrong EDC on almost every one**. The subheader is
+`00 00 20 00` on all 2,250 sectors of Origami, Link and Merlin alike: Form 2
+with none of the data, audio or video bits set, a sector declaring itself to be
+of no type at all.
 
 Descramble, and the recovered audio has a discontinuity at every sector
 boundary. Measure that jump against the signal's own lagged differences, **per
@@ -207,19 +235,49 @@ there. On Link it is literally `00 00 00 00` on all 2,250 sectors — not
 scrambled zero, not a valid EDC, and not audio:
 
 ```
-EDC field values across 2,250 sectors:  {'00000000': 2250}
-descrambles to zero:                    0 / 2250
+Link    EDC field values across 2,250 sectors:  {'00000000': 2250}
+        descrambles to zero:                    0 / 2250
 ```
+
+**Merlin has one exception, and it is the last sector.** 2,249 of its 2,250
+carry a zeroed EDC field; sector 2,268 — the one immediately before the path
+table — carries `33 34 48 aa`, and that is a **correctly computed Form 2 EDC**
+over bytes 16–2347:
+
+```
+Merlin  EDC field values:  {'00000000': 2249, '333448aa': 1}
+        sector 2,268 computed EDC  aa483433
+        sector 2,268 stored, LE    aa483433   <== valid
+```
+
+So the region is closed off by one properly finished sector while the 2,249 in
+front of it are not. Check the last sector of the run separately from the rest;
+whatever wrote this region treated its final block differently, and on a disc
+where that closing sector is missing or different you have a different tool.
 
 Extending the extraction to 2,328 bytes per sector to try to recover those four
 bytes makes the discontinuity far worse (8,839 against 455), which confirms they
 were overwritten rather than merely discarded. **Seven frames per sector are
 gone and cannot be recovered.**
 
+Merlin reproduces Link's measurement on the identical bytes, to the tenth:
+
+```
+Merlin, left channel, 2,324 B/sector
+  mean |x[k] - x[k-1]| away from boundaries    123.4
+  mean |x[k] - x[k-1]| at a sector boundary    455.6
+  lag 6 expectation                            405.5
+  lag 7 expectation                            454.7   <== match
+```
+
+Two independent pipelines, the same four numbers. If your extraction does not
+reproduce them on data with this MD5, the extraction width is wrong — it must be
+**2,324 bytes per sector**, 581 stereo frames, not 2,304.
+
 *(An earlier revision of this document, written from Origami alone, put the loss
 at six frames / 24 bytes. That accounted for sync + header + subheader and
 missed the zeroed EDC field. Link's per-channel measurement lands on lag 7 to
-within 0.1 %.)*
+within 0.1 %, and Merlin's on the same bytes lands within 0.07 %.)*
 
 Run this lag test on your disc. A boundary jump matching lag 7 is the same
 mechanism.
@@ -257,8 +315,10 @@ Things to grab immediately:
   with the title on the box and with the OS-9 module name inside the file. On
   Soccer all three disagreed (`Ultra CD-i Soccer` on the box, `CD-i Soccer` as
   the volume, `CMDS/cdi_demo` as the application, `cdi_main.mod` as the module).
-  On Origami and Link all three agree, and the path has no directory component
-  at all — the boot file sits in the root.
+  On Origami, Link and Merlin all three agree, and the path has no directory
+  component at all — the boot file sits in the root. Three of four discs
+  therefore make this field trustworthy and the fourth makes it interesting;
+  either way it is one read.
 - **[all]** **`copyright`, `abstract` and `biblio`, if named, are plain text on
   the disc.** Always `cat` all three. Soccer's held marketing copy and the
   complete credits. Origami's held the credits, a placeholder abstract
@@ -266,7 +326,25 @@ Things to grab immediately:
   name, one of them inside the copyright notice. **Link's `BIBLIOGRAPHY` is the
   complete credit roll** — producer, script, three programmers, graphic design,
   video, audio and music — and it is the only place several of those names
-  appear.
+  appear. **Merlin names all three with a `.txt` extension**, and its
+  `abstract.txt` is the only one so far that was actually written for the job:
+  823 bytes of catalogue copy that states the game's puzzle and potion counts,
+  both of which turned out to be checkable against the executable and both of
+  which were right.
+- **Grep the text files for `@(#)`.** All three of Merlin's open with an SCCS
+  what-string:
+
+  ```
+  @(#)copyright.txt	1.1	2/25/94
+  @(#)abstract.txt	1.1	2/25/94
+  @(#)bibliography.txt	1.2	6/7/94
+  ```
+
+  That is the keyword SCCS expands on checkout and the `what` utility looks for.
+  It dates each file, gives its revision number, tells you which files were
+  revised and which were written once, and tells you the source tree was under
+  SCCS. It costs one grep and it works on any shipped text, not just these
+  three.
 - **`cat` anything in the root that nothing references, too.** Origami has a
   `message.txt` that no file names and the executable never opens, holding the
   studio's address and the programmer's **private home address and telephone
@@ -275,8 +353,11 @@ Things to grab immediately:
   before giving it a second publication.
 - **Read the publisher and data preparer fields as carefully as the application
   identifier.** The preparer field is usually blank. On Origami it is a person's
-  name, and the same name is the sole programming credit. On Link it is
-  `_ISG_CDI_TOOLS_1.6` — the disc naming its own authoring tool. And Link's
+  name, and the same name is the sole programming credit. On Link **and on
+  Merlin** it is `_ISG_CDI_TOOLS_1.6` — the disc naming its own authoring tool,
+  at the same version number, on discs two years and two development houses
+  apart. That makes the string a dating tool with a known-wide window rather
+  than a fingerprint of one studio. And Link's
   **publisher field is misspelled**: `Philips Intractive Media of America, Inc.`,
   no `e` in *Interactive*, in the one string on the disc that a CD-i player
   reads and can display. The `COPYRIGHT` file three sectors away spells it
@@ -296,15 +377,26 @@ Attribute bits: 0 owner-read, 2 owner-exec, 4 group-read, 6 group-exec,
 and `0x8111` for directories; anything else is worth a look (Soccer's flagged
 the path table exposed as a file, and so does Link's).
 
-**The file number byte in the system-use area is `1` on real-time files and `0`
-on everything else.** On Link that byte is the only mechanical difference
-between a 30 MB stream and an executable at the file-system level, and it is
-what tells the driver to hand the file to the real-time reader. Check it before
-you trust any directory size.
+**[2 of 4] The file number byte in the system-use area is `1` on real-time
+files and `0` on everything else.** On Link that byte is the only mechanical
+difference between a 30 MB stream and an executable at the file-system level,
+and it is what tells the driver to hand the file to the real-time reader. Check
+it before you trust any directory size.
+
+**And do not read the extension instead.** Merlin's eleven file-number-1
+entries include three `.blt` files that are not streams at all — they are an
+asset archive the program random-accesses — alongside eight `.rtf` ones that
+are. All eleven are Form 2 at 2,324 bytes and all eleven have a directory size
+that is `sectors x 2048`, which is wrong by 13.5 %. **The byte is authoritative;
+the extension is a naming convention.** A file that is real-time in the
+file-system sense need not be a stream in the content sense.
 
 **A flat root is normal for a streaming disc.** Soccer has 12 directories and
-144 files; Origami has 5 and 46; **Link has none and 14**. Directory count
-correlates with how much the program owns rather than streams.
+144 files; Origami has 5 and 46; **Link has none and 14**; **Merlin has none and
+18**. Directory count correlates with how much the program owns rather than
+streams — and Merlin shows the limit case of that rule, because it owns almost
+everything but keeps it inside one archive file rather than in a directory
+tree.
 
 **Watch for case collisions when extracting.** Soccer had a root file
 `intro_gfx` and a root directory `INTRO_GFX`; on Windows or macOS a naive
@@ -327,9 +419,11 @@ python tools/cdifs.py map     # who owns each sector, with submode flags
   totalling 1,070,080 bytes — an entire abandoned localisation. This takes ten
   seconds and is often the best leftover-hunting move on a CD-i disc, because
   the format usually has no space pressure to force anyone to delete them.
-  Origami had none and sits at 98 % of capacity; Link had none and sits at 77 %.
-  **A disc with no slack is a disc with no dead files**, so measure the capacity
-  first and set your expectations from it.
+  Origami had none and sits at 98 % of capacity; Link had none and sits at 77 %;
+  Merlin had none and sits at 39.5 %. **A disc with no slack is a disc with no
+  dead files** — but Merlin shows the converse does not hold. Slack buys dead
+  files, it does not guarantee them, and a tidy build at 39.5 % is perfectly
+  possible. Measure the capacity to set expectations, then check anyway.
 - **Directory dates.** Every record has a six-byte date. Bucket them by month:
   the shape of the schedule falls out, and files whose dates cluster far from
   everything else are usually a different generation of the same assets. On
@@ -341,17 +435,37 @@ python tools/cdifs.py map     # who owns each sector, with submode flags
   `1993-06-24 11:02:55`, **seventeen hours later**. The last change to that game
   was a code change made overnight and dropped into a closed image. A file newer
   than the volume descriptor is always worth a sentence.
+
+  **The seconds either side of the volume descriptor are worth reading too.**
+  Merlin's last three timestamps are consecutive — `13:57:18` on
+  `cdi_merlin.stb`, `13:57:19` on the executable, `13:57:20` on the descriptor.
+  Nothing postdates the descriptor, so the build is tidy; but the file one
+  second *older* than the executable turned out to be the linker's symbol table,
+  produced by the same link and mastered with it. **Sort the listing by
+  timestamp and look at whatever sits immediately before the executable.**
 - **Gaps in the sector map.** Anything owned by `<free>` inside the file area
   deserves a hexdump. On Link the gaps are plain zeroes and they are structural:
   two runs of 2,872 sectors sit immediately in front of the two files the game
   must start streaming without a hitch — 38 seconds of disc for the drive to
   settle.
-- **Hash every file's payload *and* its subheaders.** Link presses the same
-  30 MB file three times — `ldata.rtr`, `ldata1.rtr`, `ldata2.rtr`, byte-
+- **[2 of 4] Hash every file's payload *and* its subheaders.** Link presses the
+  same 30 MB file three times — `ldata.rtr`, `ldata1.rtr`, `ldata2.rtr`, byte-
   identical down to the channel and submode bytes — at LBA 2,992, 115,786 and
   235,940. That is 11.5 % of the disc spent so a single-speed drive is never far
-  from the game's working set. **If two files hash the same, look at their LBAs
-  before calling it a mistake.**
+  from the game's working set. **Merlin does exactly the same thing** with
+  `boltlib0.blt`, `boltlib1.blt` and `boltlib2.blt` — 8 MB each, one MD5, one
+  timestamp, 7.9 % of the disc, at LBA 2,340, 122,447 and 125,893. Two discs of
+  four now trade space for head movement this way, so **if two files hash the
+  same, look at their LBAs before calling it a mistake.**
+
+  **But check whether the binary knows all the names.** Link's executable names
+  all three of its copies. Merlin's contains only the string `boltlib0.blt` and
+  computes the digit: `OpenNextFile` increments a copy index, compares a global
+  the symbol table calls `ErrorRetry` against an immediate `#3`, and adds the
+  index as a character into the name buffer. So on Merlin a plain string
+  cross-reference reports two files that nothing references, and the correct
+  conclusion is the opposite of the obvious one. **A filename ending in a digit,
+  with siblings, is a filename that may be generated.**
 
 ---
 
@@ -385,13 +499,19 @@ for you on 68000 modules: **`M$Name` is a four-byte offset at byte 12**, not
 two, and names are **NUL-terminated**, not high-bit-terminated. Handle both
 conventions.
 
-**Not every module has `M$Init`/`M$Term`.** On Link the header ends at 72 and
-the name string starts there, so reading offsets 72 and 76 as pointers yields
-`0x6364695f` and `0x6c696e6b` — the ASCII of `cdi_link` itself. If those two
-fields look like text, the header is 72 bytes, not 80.
+**[2 of 4] Not every module has `M$Init`/`M$Term`.** On Link the header ends at
+72 and the name string starts there, so reading offsets 72 and 76 as pointers
+yields `0x6364695f` and `0x6c696e6b` — the ASCII of `cdi_link` itself. Merlin
+does the same: `M$Name` reads `0x48`, the name starts there, and offsets 72 and
+76 read as `0x6364695f` / `0x6d65726c`, the ASCII of `cdi_merl`. **If those two
+fields look like text, the header is 72 bytes, not 80.**
 
 The name may be followed by the **linker option string** in the same area.
-Origami's main module reads `origami` NUL `-F` NUL.
+Origami's main module reads `origami` NUL `-F` NUL, and Merlin's reads
+`cdi_merlin` NUL `-F` NUL — the same option, two years and one continent apart.
+What `-F` selects is not established; it is **not** the symbol-file switch,
+because Origami carries the option and ships no symbol file while Merlin carries
+both.
 
 Expect several modules concatenated with no padding — Origami's executable is
 four (`Prgrm`, `Sbrtn`, `Prgrm`, `Trap`) whose sizes sum to the file size
@@ -401,8 +521,11 @@ it is the shared-library / trap-handler mechanism.
 
 **Read the edition byte.** Link's game module is edition 1 and its bumper is
 edition 7 — the logo player was reworked seven times and the game never was.
+Merlin's single module is edition 7, so the same number can belong to the game
+itself; read it as a revision count, not as a role.
 
-**[all]** **Look at the bytes immediately after the header, before any code.**
+**[3 of 4]** **Look at the bytes immediately after the header, before any
+code.**
 On Soccer they were a 29-glyph 1bpp 8×8 font — the alphabet the loader error
 screens need before any file has been read. On Origami, inside the `cdi_bpsys`
 module, they were nine names:
@@ -418,6 +541,15 @@ J. Piesing is Jon Piesing, of Philips' CD-i and interactive-TV standards work.
 **Grep every CD-i executable you meet for `Armendariz`.** It should appear in
 every disc linking the same library revision, which makes it a free toolchain
 fingerprint and, across enough titles, a way to date a build.
+
+**A negative result is informative.** Merlin has nothing between its header and
+`_cstart` but the module name and the option string — no font, no author list —
+and no `Armendariz` and no `cdi_bpsys` anywhere in the binary. It does not link
+the Philips base program system at all; it links a third-party runtime (BOLT)
+whose graphics, audio, input and disc code is all first-party. So the absence of
+that name is not a failed grep, it is a finding: **this title used somebody
+else's engine.** Check what fills the gap before concluding the grep was
+wasted.
 
 ### Fingerprint the C runtime
 
@@ -436,23 +568,118 @@ digit, `0x40` hex digit. Space is `0x30`, the digits `0x48`, `A`–`F` `0x42`,
 `a`–`f` `0x44`. It is the Microware OS-9 C library's character-class table,
 linked unchanged into both.
 
+**Merlin gives it its name and its full form: `_chcodes`, 129 bytes.** The
+symbol file calls the global `_chcodes` and puts the next global 129 bytes
+later; the initialiser sits at module offset `0x21092` and is the same table
+with the leading guard slot Link's 124-byte window cuts off:
+
+```
+021092  00 01 01 01 01 01 01 01 01 01 11 11 01 11 11 01
+0210a2  01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+0210b2  01 30 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+0210c2  20 48 48 48 48 48 48 48 48 48 48 20 20 20 20 20
+0210d2  20 20 42 42 42 42 42 42 02 02 02 02 02 02 02 02
+0210e2  02 02 02 02 02 02 02 02 02 02 02 02 20 20 20 20
+0210f2  20 20 44 44 44 44 44 44 04 04 04 04 04 04 04 04
+021102  04 04 04 04 04 04 04 04 04 04 04 04 20 20 20 20
+021112  01
+```
+
+Index 0 is the guard slot for `EOF`; index *n*+1 is ASCII *n*; tab, LF, FF and
+CR are `0x11`. So the run to grep for is
+`01 01 01 11 11 01 11 11`, which is present on both discs regardless of where
+the window starts, and the symbol to look for in a symbol table is `_chcodes`.
+
 Finding it proves a shared toolchain and anchors the runtime's data area. The
 runtime's panic strings are usually nearby, and their wording dates the build:
 Link's game says `**** Can not install trap handler ****` and its bumper says
 `**** Can't install trap handler ****` — the same message from two vintages of
-the same library.
+the same library. Merlin, in 1995, has the contracted form, and also carries
+`**** Stack Overflow ****` and
+`Unexpected signal number $%X - Application Terminating`.
+
+**Look for a libgcc-to-Microware shim while you are in the runtime's data
+area.** Merlin has five `BRA.W` instructions four bytes apart at `0x1d452`:
+
+```
+__mulsi3    -> _T$UMul / _T$LMul      __umodsi3  -> _T$UMod
+__udivsi3   -> _T$UDiv                __modsi3   -> _T$LMod
+__divsi3    -> _T$LDiv
+```
+
+Every branch target is the Microware routine its GCC name calls for, and
+`_T$UMul` and `_T$LMul` are the same address. Something in that build was
+compiled by a GCC-family compiler emitting calls to libgcc, and twenty bytes of
+thunk land them on the Microware runtime instead. A row of equally spaced
+`60 00 xx xx` near the arithmetic helpers is what it looks like without symbols.
 
 ---
 
 ## 6. Symbols, strings, and the two tricks that pay best
 
-### 6a. Scan for a symbol table before anything else
+### 6a. Look for symbols before anything else — in two different places
 
-**Do this as step four, not step ten.** Link's `cdi_link` carries **325 C
-function names** — NUL-terminated ASCII, laid down in link order between the
-functions themselves. Neither Soccer nor Origami had them, so the technique was
-never tried until the third disc, and on a disc that has them it is worth more
-than everything else in this document combined.
+**Do this as step four, not step ten.** On a disc that has symbols they are
+worth more than everything else in this document combined, and there are two
+quite different ways they survive. Check both.
+
+#### 6a-i. A `.stb` file in the directory listing
+
+**Check the file listing for a `.stb` before you open a single binary.** It is
+one glance at output you already have.
+
+Merlin's root holds `cdi_merlin.stb`, 19,752 bytes, which nothing on the disc
+references and the program never opens. It is the **Microware linker's global
+symbol table**, wrapped as an OS-9 Data module so a debugger could `modload` it
+beside the program, and it carries **887 symbols with their source-level
+names** — the game, the title's runtime, the Microware C library and the OS-9
+system-call library, all four.
+
+```
+python tools/cdistb.py stats
+python tools/cdistb.py list
+```
+
+The record array follows the module name; each record is 16 bytes:
+
+```
+u16  hi         high word of the symbol's 32-bit value
+u16  value      low word
+u16  flags      0x0004 on code-section symbols, clear on globals;
+                0x2000 and 0x1000 appear to be visibility, unconfirmed
+u32  nameoff    offset of a NUL-terminated name, module-relative
+```
+
+The name offsets climb monotonically and every delta is the previous name's
+length plus one, which is what identifies the layout. **The two 16-bit halves
+are one 32-bit number**, `addr = (hi << 16) | value`, and `hi == 0xffff` means a
+negative A6-relative offset — where an OS-9/68000 C program keeps its globals.
+
+**Prove the address model before you trust a single name**, with checks against
+the executable's own header:
+
+```
+btext    -> 0x00000000     the module's first byte
+etext    -> 0x0002196a     exactly M$Size
+_cstart  -> 0x00000054     exactly M$Exec
+```
+
+and then in bulk: of Merlin's 576 code symbols, **452 land on `4e55` (`LINK
+A5`), `2f00` (`MOVE.L D0,-(SP)`) or `48e7` (`MOVEM.L`)** — C-compiler
+prologues. If your model is wrong that number collapses.
+
+A `.stb` also hands you things a name-string scan cannot: the **globals**, with
+their offsets, so adjacent symbols bracket each structure. Merlin's
+`R250_Buffer` is followed by the next global exactly 500 bytes later — 250
+16-bit words, which names both the generator (R250, Kirkpatrick–Stoll) and its
+state size. The same trick gives `_chcodes` its 129-byte length in section 5.
+
+#### 6a-ii. Loose name strings inside the binary
+
+Link's `cdi_link` carries **325 C function names** — NUL-terminated ASCII, laid
+down in link order between the functions themselves, with no symbol file
+anywhere. Neither Soccer nor Origami had either kind, so the technique was never
+tried until the third disc.
 
 ```
 python tools/cdisym.py list      # address, name
@@ -500,11 +727,51 @@ What to look for once you have the list:
 There will be no `main`, and no `printf` or `malloc`: the C library carries no
 name strings, so what you get is exactly the title's own code.
 
+**A `.stb` behaves the opposite way, and that is a feature.** Merlin's contains
+`main`, `printf`, `malloc`, `strcmp`, `memcpy`, `open`, `read`, `lseek`,
+`modload`, `os9fork` and the rest, because the linker records everything it
+linked. That lets you separate the title from its libraries by section and by
+address run, and it is how the libgcc thunk table in section 5 was found. It
+also means the symbol count is not a measure of how big the game is: of Merlin's
+887, only 83 are the game.
+
+**What to look for is the same either way.** Merlin's list gave up eight
+`*ChallEngine` functions, a `BOSS_*` state machine with paired
+`Get`/`Set` accessors for every piece of game state — including a
+`BOSS_GetCheatMode` / `BOSS_SetCheatMode` pair built with the same verbs as the
+difficulty accessors — a `KludgeTwoControllers` global sitting in the input
+block, and `TC_Set_Animation_Paramter` shipped misspelled beside a correctly
+spelled `TC_Get_Animation_Parameter`. The apology, the misspelling and the
+undocumented mode are all the same species as Link's `fix_jump_stick`,
+`check_vulnerablility` and `retrieve_mkt_demo`.
+
+**Intersect symbol addresses with string offsets.** This is the move that pays
+on a disc with a symbol file, because you get address ranges for free. Merlin's
+executable holds 30 identifiers ending in `DD`; bucketing them by which
+`*ChallEngine`'s address range they fall inside splits them into 3 + 4 + 6 + 3 +
+2 + 3 + 6 puzzles and 3 potions, which is **27 and 3** — exactly the counts the
+disc's own `abstract.txt` claims. Neither list alone says that; the intersection
+does.
+
+**And read the abbreviations out of the error strings.** Forty of Merlin's
+symbols carry a `TC_` prefix that nothing expands, until the diagnostics turn up
+`Traffic Cop Could Not Open Animation:%d`. Prefixes are cheap to collect and
+their expansions usually shipped.
+
 ### 6b. Cross-reference every path-shaped string, in both directions
 
 68000 object code produces enormous amounts of accidental ASCII, so filter:
 keep runs that are mostly letters and whose words are long enough to be
 language. `cdistrings.py` does this and separates disc paths from prose.
+
+**Strip the epilogue bytes off the front of every hit.** A string literal placed
+immediately after a function picks up that function's last instructions, and
+`4E5D 4E75` — `UNLK A5; RTS` — renders as `N]Nu`. On Merlin that prefix hid the
+*first* name of every cluster: `N]NuPondDD` fails a name filter that `FlasksDD`
+passes, so the filter silently drops one entry in every group of related
+strings. Strip a leading `N]Nu`, `NuNu`, `N]` or `Nu` and advance the offset to
+match. Also split concatenated names: the linker packs `PondDD`, `FlasksDD` and
+`StalacDD` with no separator a printable-run filter can see.
 
 Then:
 
@@ -525,7 +792,21 @@ to.
 **A clean cross-reference is also a result.** On Link nothing dangles in either
 direction: every file is named by one of the two executables and every name is
 on the disc. Whatever was cut from that game was cut before the final link.
-Origami's is clean too. Say so — it dates the cut.
+Origami's and Merlin's are clean too. Say so — it dates the cut.
+
+**[2 of 4] Names may live in a data file rather than in the binary.** Merlin's
+executable contains six distinct paths and no more. The seven filenames its
+animation system streams from appear **nowhere in the executable** — they are in
+`tcanim.toc`, a 472-byte root file with a seven-slot name table at the end. So a
+binary-only cross-reference reports seven unreferenced files and gets the disc
+badly wrong.
+
+Before concluding anything dangles, look for a small root file whose size is
+suspiciously exact and read it as a table. Merlin's is fully accounted for:
+`4 + 89 x 4 + 7 x 16 = 472`, and every one of its 89 entries resolves to a real
+sector on the disc. **If a candidate index file exists, verify it against the
+image rather than believing it** — that check is what turned an inference into a
+result.
 
 **Check which executable names what.** Link's game binary never mentions
 `bumper.rtf`; the bumper program does, and the game names the bumper. The chain
@@ -536,9 +817,25 @@ Other things to grep for by hand once the filter has run: profanity and
 `debug`/`test`/`cheat` (Soccer had `CHEAT MODE ON` and an unprintable error
 message), `TV`/`MONITOR`/`WINDOW` (development-host options — Link carries
 `625` and `TV`, the strings that ask CD-RTOS for a 625-line PAL display, on a
-disc that shipped to 525-line NTSC territory), and placeholder prose — look
+disc that shipped to 525-line NTSC territory; Merlin carries both too, on a
+European pressing where they are unremarkable), and placeholder prose — look
 specifically *between* legitimate string blocks, which is where Soccer hid a
 copyright notice nobody replaced.
+
+**Collect the `printf`-shaped strings as a set.** Anything containing `%d`,
+`%s` or `%X` is a developer diagnostic that was never compiled out, and read
+together they describe subsystems the user never sees. Merlin ships fourteen,
+including a state machine narrating itself (`BOSS: CurrentState = %d`), a bit
+packer complaining about its own parameters, and one column-aligned for a
+terminal that is not attached to a television:
+
+```
+BOSS_Init:  NumBitsPerVar = %d.  Should be 1,2,4, or 8.            -- using 8.
+```
+
+A `dprintf` in the symbol table with a dozen callers is the same finding as
+Origami's video-plane hex dumper: a serial host on the other end of a cable,
+still wired up on the pressing.
 
 ### 6c. String storage on a Microware build
 
@@ -570,8 +867,18 @@ And `(empty)` may itself be a string: the label an unused slot draws.
 ## 7a. Read the subheader coding byte before you guess anything
 
 **[all]** Every video and audio sector states its own format in subheader
-byte 3. This is free and it is authoritative — decode it before trying widths
-or sample rates.
+byte 3. This is free — decode it before trying widths or sample rates.
+
+**It is authoritative for audio on all four discs. For video it is only
+authoritative when the MCD212 decodes the stream itself.** Merlin tags all
+3,446 sectors of a `.blt` file with video coding `0x02`, and the content is not
+CLUT8 or any other picture format — it is an asset archive. It tags its
+animation video channel `0x00`, nominally CLUT4 at normal resolution, and the
+data does not autocorrelate at any CD-i line pitch and has bit 7 set on 43.6 %
+of its bytes. Where a title expands its own frames in software before handing
+them to the hardware, the coding byte records what the *display* will eventually
+be given, or nothing meaningful at all. Trust it for audio; corroborate it for
+video.
 
 **Video coding byte:**
 
@@ -608,7 +915,8 @@ clean audio, which settles it. Getting this wrong costs you a factor of two in
 every duration you compute.
 
 A `bits 3-0` value of 15 means the title needs the **Digital Video cartridge**.
-Neither 1993 disc has a single MPEG sector.
+Neither 1993 disc has a single MPEG sector, and neither does Merlin; only Soccer,
+in 1997, uses one.
 
 Normal resolution is **384 × 280 on PAL** and **384 × 240 on NTSC**. Both are
 384 bytes to the line for the one-byte-per-pixel codings.
@@ -618,9 +926,17 @@ purpose.** Origami is Level C for all five narration tracks and Level B for
 exactly one channel in one file — which turns out to be the only music on the
 disc. Link is Level C throughout `lmusic.rtr` except for the last record on the
 last channel, which is Level B stereo, and Level C mono throughout the cutscene
-soundtrack except for the final record, which is Level B stereo. **When you find
-the odd coding byte out, you have found the thing that was worth twice the
-bandwidth** — and on both discs it was the ending.
+soundtrack except for the final record, which is Level B stereo. Merlin is Level
+B mono everywhere and Level B **stereo** for exactly 149 sectors — every fourth
+sector of one 7.9-second animation, which contains no mono audio at all. Three
+of four discs, three different base levels, and in each case one outlier.
+
+**When you find the odd coding byte out, you have found the thing that was worth
+twice the bandwidth.** On both 1993 discs it was the ending. **On Merlin it is
+not** — the stereo sequence is the thirteenth of the fifteen animations in the
+file that holds the prologue and the interstitials, with two more after it. So
+the rule about where to look holds and the guess about what you will find does
+not. Locate the outlier, then play it; do not name it from its position.
 
 ---
 
@@ -789,7 +1105,7 @@ bitmaps.
 
 ### Look for fixed slots
 
-**[2 of 3]** Both Soccer's sprites and Link's animation frames sit in
+**[2 of 4]** Both Soccer's sprites and Link's animation frames sit in
 **fixed-size slots with the tail padded**, and in both cases decoding the stream
 continuously produces something that looks nearly right and drifts.
 
@@ -878,15 +1194,21 @@ drive delivers 75 sectors a second, so:
 ```
 Level C mono      one sector in sixteen     -> up to 16 channels
 Level C stereo    one sector in eight       -> up to 8 channels
-Level B stereo    one sector in four        -> up to 4 channels
+Level B mono      one sector in nine (9.4)  -> up to 8 channels in practice
+Level B stereo    one sector in four (4.7)  -> up to 4 channels
 ```
 
-Link's `lmusic.rtr` runs **eight** Level C stereo channels, which is the
-theoretical maximum, and Origami runs five Level C mono narration channels
-alongside two video streams.
+A Level B sector holds the same 4,032 samples but plays them at 37,800 Hz, so it
+is **0.1067 s** mono — half a Level C sector's worth of time for the same bytes.
 
-**If your decoded channel length does not match `sectors × 0.2133 s`, the coding
-byte is not what you think.**
+Link's `lmusic.rtr` runs **eight** Level C stereo channels, which is the
+theoretical maximum; Origami runs five Level C mono narration channels alongside
+two video streams; and Merlin's `help.rtf` runs **eight Level B mono** channels,
+which needs 8/9.4 of the bandwidth and is why that file is only 8.9 % padding
+where everything else on the disc is 42–64 %.
+
+**If your decoded channel length does not match `sectors × 0.2133 s` (Level C)
+or `sectors × 0.1067 s` (Level B), the coding byte is not what you think.**
 
 ### Check whether the music actually ships
 
@@ -897,9 +1219,10 @@ records, and nothing in the binary names any of it.
 
 ### Some questions only ears can close
 
-All three pipelines hit a point where the measurements ran out: identifying the
-speaker in the head-region audio, and mapping five narration channels onto five
-named languages. Long-term average spectra, envelope modulation and
+Every pipeline so far has hit a point where the measurements ran out:
+identifying the speaker in the head-region audio, mapping five narration
+channels onto five named languages, working out what Merlin's eight help
+channels select on and why one of its 89 animations is the only one in stereo. Long-term average spectra, envelope modulation and
 syllable-rate estimates all pointed in plausible directions and none was
 decisive. Decode the channels to WAV, say in the documentation exactly what is
 measured and what is inferred, and leave the listening as an open question
@@ -921,10 +1244,16 @@ lmusic.rtr           0   95,005     220,791,620     194,570,240
 lanim.rtr       40,391   62,184     227,236,384     210,073,600
 ```
 
+On Merlin every real-time file is Form 2 throughout, so the fiction is a flat
+13.5 % everywhere — `boltlib0.blt` is 3,446 x 2,324 = 8,008,504 bytes and the
+directory says 3,446 x 2,048 = 7,057,408. The header inside the file gives its
+own size as 8,007,558, which confirms the sector reading and leaves 946 bytes of
+slack. **When a file carries its own size field, use it as the check.**
+
 **[all]** Sectors tagged neither VIDEO nor AUDIO nor DATA are **bit-rate padding
 and carry nothing** — 19.5 % of Soccer's one real-time file, 26.7 % of the whole
-of Origami, **49.6 % of the whole of Link**. Drop them; concatenate the rest at
-2,324 bytes each.
+of Origami, 38.3 % of the whole of Merlin, **49.6 % of the whole of Link**. Drop
+them; concatenate the rest at 2,324 bytes each.
 
 ### Half the disc being empty is the mechanism, not a defect
 
@@ -995,14 +1324,36 @@ video a PAL machine never touches.
 
 ### Interleaved channels may be alternatives — a jukebox
 
-Link's `lmusic.rtr` is the other pattern, and the tell is unmistakable:
-**channel *n*'s first sector is sector *n***, a perfect round-robin from the
-first byte of the file. Eight stereo music channels running simultaneously, of
-which the game listens to one.
+**[2 of 4]** Link's `lmusic.rtr` is the other pattern, and the tell is
+unmistakable: **channel *n*'s first sector is sector *n***, a perfect
+round-robin from the first byte of the file. Eight stereo music channels running
+simultaneously, of which the game listens to one.
 
-The point is that **switching costs no seek**. The sectors for the tune you want
-are already going past. Look for `channel n starts at sector n` and you have
-found a design that trades disc space for head movement.
+Merlin's `help.rtf` is the same design **descending**, on eight channels again:
+
+```
+first sector of channel  8 ->  24      channel 12 -> 20
+                         9 ->  23              13 -> 19
+                        10 ->  22              14 -> 18
+                        11 ->  21              15 -> 17
+```
+
+So do not test for `channel n starts at sector n` literally. **Test whether the
+channels' first sectors form a contiguous run** — ascending or descending, and
+starting wherever the file's own header ends. Two of four discs do this.
+
+The point is that **switching costs no seek**: the sectors for the track you
+want are already going past. It also shows in the padding figure — Merlin's
+`help.rtf` is 8.9 % padding against 42–64 % for every other stream on the disc,
+because all eight of its channels run at full rate the whole way through. **A
+real-time file with anomalously low padding is a jukebox until proved
+otherwise.**
+
+Merlin names the design outright: `TC_Open_Jukebox`,
+`TC_Play_Jukebox_Selection`, `TC_Is_Jukebox_Playing`, `TC_Stop_Jukebox_Play` and
+a global called `jukebox`. On Link the identical mechanism had to be inferred
+from sector arithmetic because nothing named it — which is the argument for
+doing section 6a first.
 
 ### Runs of pure padding cut a file into blocks
 
@@ -1083,34 +1434,80 @@ with no bytecode interpreter anywhere in its symbol table.
 data**: `48e7` (`MOVEM.L`), `4e56` (`LINK A6`), `4eb9` (`JSR abs`) and `4afc`
 (a module header) are all cheap to test and all change what the thing is.
 
+### Validate a container by chaining it, and stop only when it lands exactly
+
+A title may keep everything it owns inside one archive rather than in files.
+Merlin's `boltlib0.blt` opens with the ASCII tag **`BOLT`** and holds 129 groups
+of 7,703 members in 8 MB, and the whole of the game's art, palettes and tables
+are inside it. The way to be sure you have read such a thing correctly is not to
+render something and squint at it — it is arithmetic:
+
+1. **Find the count from a header field, not by scanning.** A field reading
+   2,096 with a record array starting at 32 gives `(2096 - 32) / 16 = 129`
+   exactly. A field that divides cleanly is telling you the record size too.
+2. **Chain every record.** Each member's offset should be the previous member's
+   offset plus its length, allowing one byte of even alignment.
+3. **Require the chain to land on the next group's offset, and the last one to
+   land on the size in the header.** Merlin's does, on all 129, with **zero
+   breaks**, ending on 8,007,558 — the value at header offset 12.
+
+Getting this wrong is easy in a specific way: a group's member table lives
+*inside* the group, at its start, so computing a group's end as
+`offset + size` is short by exactly `count x 16` and the shortfall looks
+convincingly like a gap between groups. **If your "gaps" are all exactly
+`count x record_size`, they are not gaps.**
+
+### Settle a compression flag by measurement, not by name
+
+A member record's type byte is worth reading, but do not guess which value means
+compressed. Compare each record's declared size against the distance to the next
+record and let the distributions decide. On Merlin:
+
+```
+type  8 / 9 / 10   stored - declared is 0 or 1, never anything else
+type  0 / 1 / 2    stored - declared is strictly negative, always
+```
+
+The `1` is a byte of even-alignment padding and appears nowhere else. So bit
+`0x08` is "stored verbatim", the low bits are a sub-kind that survives both
+ways, and the size field is always the size **after** expansion — which is what
+a `DecompressSize` global is for. Two minutes of counting, and no assumption.
+
+**Report the ratio even when it is unimpressive.** BOLT's compressor recovers
+1.172 : 1 across 4.7 MB, which is 8 % of the library, on a disc using 39.5 % of a
+CD. Link's RL7 managed 10.7 : 1 on comparable material. A weak compressor is a
+finding about what the team was optimising for, and it is also a warning: do not
+assume a container that has a `Decompress` entry point is doing anything you
+need to reverse before you can read most of it.
+
 ---
 
 ## 10. Baselines, so you can tell signal from noise
 
-Three very different discs, for comparison:
+Four very different discs, for comparison:
 
-| | Ultra CD-i Soccer (1997) | Origami (1993) | Link: The Faces of Evil (1993) |
-|---|---|---|---|
-| Track | 7,875 sectors (1:45), 2.4 % of a CD | 326,400 sectors (72:32), 98 % | 255,924 sectors (56:52), 77 % |
-| Entries | 12 dirs, 144 files, 10,635,729 B | 5 dirs, 46 files, 631,506,598 B | **0 dirs, 14 files** |
-| Pre-FS region | 2,269 sectors, 28.5 % of the image | 2,268 sectors, 0.7 % | 2,269 sectors, 0.9 % |
-| Head audio | 7.41 s + 8.31 s mono, L = R exactly | **29.39 s, byte-identical to Link** | **29.39 s, byte-identical to Origami** |
-| Tail padding | plain zeroes | plain zeroes, 15,770 sectors | plain zeroes + 4 sectors of `0x20` |
-| Executable | 229,376 B, 2 modules | 82,720 B, 4 modules | 135,168 B, 1 module (+ a 12 KB bumper) |
-| Symbols in the binary | none | none | **325 C function names** |
-| Streaming | one MPEG file | 79 % of the disc | 99.7 % of the bytes |
-| Padding | 19.5 % of the one RTF | 26.7 % of the disc | **49.6 % of the disc** |
-| Compression | none, bar the run-length sprites | none, anywhere | RL7 for everything that moves, 10.7:1 |
-| Graphics | raw CLUT bitmaps + palettes on disc | DYUV and CLUT7, real-time only | CLUT7 playfields, RL7 cels, one DYUV still |
-| Palettes | 192/384/768 B, entry 0 `#00FF00` | **none on the disc at all** | 384 B inline, entry 0 `#FFFFFF` |
-| Audio | 12 effects, 10.2 s, Level C in AIFF-C | 5 languages, 3 h 57 m, raw | **100.8 min**, Levels B and C, raw |
-| Video | MPEG-1 368 × 272 | 40 files, 7 streams each, no MPEG | no MPEG; RL7, CLUT7, DYUV |
-| All-zero files | 16, totalling 1,070,080 B | none | none |
-| Dangling path references | 8 | none | none |
-| Duplicated files | none | none | **the same 30 MB pressed 3× (11.5 %)** |
-| Languages shipped | English only | five — one of them not on the box | English only |
+| | Ultra CD-i Soccer (1997) | Origami (1993) | Link: The Faces of Evil (1993) | Merlin's Apprentice (1995) |
+|---|---|---|---|---|
+| Track | 7,875 sectors (1:45), 2.4 % of a CD | 326,400 sectors (72:32), 98 % | 255,924 sectors (56:52), 77 % | 131,610 sectors (29:14), 39.5 % |
+| Entries | 12 dirs, 144 files, 10,635,729 B | 5 dirs, 46 files, 631,506,598 B | **0 dirs, 14 files** | **0 dirs, 18 files** |
+| Pre-FS region | 2,269 sectors, 28.5 % of the image | 2,268 sectors, 0.7 % | 2,269 sectors, 0.9 % | 2,269 sectors, 1.7 % |
+| Head audio | 7.41 s + 8.31 s mono, L = R exactly | **byte-identical to Link and Merlin** | **byte-identical to Origami and Merlin** | **byte-identical to both 1993 discs** |
+| Tail padding | plain zeroes | plain zeroes, 15,770 sectors | plain zeroes + 4 sectors of `0x20` | plain zeroes, 2,258 sectors |
+| Executable | 229,376 B, 2 modules | 82,720 B, 4 modules | 135,168 B, 1 module (+ a 12 KB bumper) | 139,264 B, 1 module, edition 7 |
+| Symbols | none | none | **325 C function names in the binary** | **887, in a `.stb` file in the root** |
+| Streaming | one MPEG file | 79 % of the disc | 99.7 % of the bytes | 88.6 % of the disc |
+| Padding | 19.5 % of the one RTF | 26.7 % of the disc | **49.6 % of the disc** | 38.3 % of the disc |
+| Compression | none, bar the run-length sprites | none, anywhere | RL7 for everything that moves, 10.7:1 | BOLT, on 54 % of the library, **1.17:1** |
+| Graphics | raw CLUT bitmaps + palettes on disc | DYUV and CLUT7, real-time only | CLUT7 playfields, RL7 cels, one DYUV still | inside the BOLT container; frame codec unidentified |
+| Palettes | 192/384/768 B, entry 0 `#00FF00` | **none on the disc at all** | 384 B inline, entry 0 `#FFFFFF` | 390 B BOLT members, 6 + 128 × 3 |
+| Audio | 12 effects, 10.2 s, Level C in AIFF-C | 5 languages, 3 h 57 m, raw | **100.8 min**, Levels B and C, raw | 47 min, Level B mono, raw |
+| Video | MPEG-1 368 × 272 | 40 files, 7 streams each, no MPEG | no MPEG; RL7, CLUT7, DYUV | no MPEG; 89 animations in 7 files |
+| All-zero files | 16, totalling 1,070,080 B | none | none | none |
+| Dangling path references | 8 | none | none | none |
+| Duplicated files | none | none | **the same 30 MB pressed 3× (11.5 %)** | **the same 8 MB pressed 3× (7.9 %)** |
+| Languages shipped | English only | five — one of them not on the box | English only | English only |
 
-The three discs bracket the format. Soccer is what a *game* looks like on CD-i
+The four discs bracket the format. Soccer is what a *game* looks like on CD-i
 when the program owns its assets: small files, a big executable, everything
 loaded. Origami is what a *presentation* looks like: a tiny executable that owns
 nothing and streams every pixel, including every letter of every menu. Link is
@@ -1118,9 +1515,17 @@ the hybrid and the most extreme case — a game whose executable owns almost
 nothing, whose levels arrive as code and pixels together, and which spends half
 its surface on keeping the drive fed.
 
+**Merlin is the fourth shape: a game on somebody else's engine.** It owns
+everything, like Soccer, but keeps it in one archive rather than 144 files, so
+its root looks like a streaming disc's and its behaviour does not. It links no
+Philips library at all. And it sits in the middle of the capacity range with no
+dead files, which is the combination the first three discs would not have
+predicted.
+
 If your disc compresses something, has more than one directory level, ships
-palettes for CLUT data, uses MPEG, or carries symbols, it is doing something at
-least one of these did not. **Carry the method forward, not the numbers.**
+palettes for CLUT data, uses MPEG, carries symbols, or keeps its assets in a
+container with its own header, it is doing something at least one of these did
+not. **Carry the method forward, not the numbers.**
 
 ### Count the languages yourself
 
@@ -1131,6 +1536,13 @@ cheapest check is the audio channel census in section 9; the confirmation is
 usually a menu screen, and on a disc with no text files it will be a picture, so
 you will have to render it.
 
+**And do not read a parallel-channel count as a language count either.**
+Merlin's `help.rtf` carries eight audio channels and the disc ships in one
+language; the eight are alternatives selected by content, not by locale. The
+discriminator is whether the channels are the same length and start together
+(languages, as on Origami) or differ in record count and interleave as a
+round-robin (a jukebox, as on Link and Merlin).
+
 ---
 
 ## 11. Order of work that worked
@@ -1138,20 +1550,28 @@ you will have to render it.
 1. Extract to a raw image; confirm one `MODE2_RAW` / `CDI/2352` track and note
    the capacity used. That number sets your expectations for everything else.
 2. `cdihead.py map` — the pre-file-system region, before anything else. **Hash
-   the descrambled region and compare it against the known 1993 recording
-   (`a0ed87f2e98b43f91281d16390fb178b`) before analysing anything.**
+   the descrambled region (2,324 bytes per sector) and compare it against the
+   known 1993–95 recording (`a0ed87f2e98b43f91281d16390fb178b`) before analysing
+   anything.** Three of four discs so far match it outright.
 3. Volume descriptor and path table; note the application identifier, the
    publisher and the data preparer.
 4. `cdifs.py list` / `map` / `extract`; note which entries have file number 1;
    all-zero census; date histogram against the volume date; hash files against
-   each other.
-5. **`cdisym.py list` on every executable.** If the symbols are there,
-   everything after this is easier — read them in address order.
+   each other. **Read the listing itself before opening anything** — look for a
+   `.stb`, for sibling filenames differing only in a digit, and for whatever is
+   timestamped one second before the executable.
+5. **Symbols, both ways.** `cdistb.py` on any `.stb` in the root, and
+   `cdisym.py list` on every executable. If the symbols are there, everything
+   after this is easier — prove the address model against `M$Size` and `M$Exec`,
+   then read them in address order.
 6. `os9mod.py`: parity and CRC on every module; the bytes after each header;
-   grep for `Armendariz`; look for the shared `ctype` table.
+   grep for `Armendariz`; look for the `_chcodes` table and for a row of equally
+   spaced `60 00 xx xx` near the arithmetic helpers.
 7. `cat` the copyright / abstract / bibliographic files — and anything else in
-   the root that nothing references.
-8. Filtered strings; then the two-way path cross-reference, per executable.
+   the root that nothing references. Grep them for `@(#)`.
+8. Filtered strings, with epilogue bytes stripped; then the two-way path
+   cross-reference, per executable — and check any small root file that might be
+   an index before calling anything unreferenced.
 9. **Subheader census by channel** on every real-time file. This tells you
    whether the disc is a game or a presentation.
 10. Record structure: `EOR`/`EOF` lists per channel, then padding runs, then
@@ -1160,7 +1580,8 @@ you will have to render it.
     channel per stream and *listen* — several questions only ears can close.
 12. Graphics: palette sizes → pixel-value ceilings → autocorrelated pitch →
     **prove the total to the byte** → render everything.
-13. Tagged chunks, validated structurally, and check whether any of them is code.
+13. Tagged chunks and containers, validated by chaining them until they land
+    exactly on a header field, and check whether any of them is code.
 
 Write down what does *not* resolve. Half of what makes a disc interesting is the
 list of things that are measurably odd and not yet explained.
