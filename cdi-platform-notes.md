@@ -1,7 +1,7 @@
 # CD-i platform notes — a checklist for the next disc
 
 A running checklist, carried from one CD-i documentation pipeline to the next
-and added to by each. It now covers **four discs, four years and two
+and added to by each. It now covers **five discs, four years and two
 continents apart**:
 
 - **Ultra CD-i Soccer** (Krisalis / Philips, UK, 1997) — a game: 144 small
@@ -18,11 +18,17 @@ continents apart**:
   puzzle game on a third-party runtime: 18 files in a flat root, 39.5 % of a CD,
   everything the program owns inside one 8 MB container pressed three times, and
   **the linker's symbol file left in the root**.
+- **The Apprentice** (The Vision Factory, Netherlands, 1994) — a platform game
+  on a **CD-i Ready** disc: the entire volume hides in the 69,150-sector pregap
+  of track 1, 74 % of the pressing is Red Book audio, and the soundtrack is
+  pressed twice — once as CD-DA and once as ADPCM, mapped one to one by a table
+  in the executable. It too left the linker's symbol file behind.
 
 They have almost nothing in common at the content level, which makes the things
-they *do* share worth trusting. Those are marked **[all]** when all four agree
-and **[N of 4]** when fewer do. Findings from only one disc are named, and are
-the ones to test rather than assume.
+they *do* share worth trusting. Those are marked **[all]** when all five agree
+and **[N of 5]** when fewer do. Older marks reading **[N of 4]** predate the
+fifth disc and have not all been rechecked against it. Findings from only one
+disc are named, and are the ones to test rather than assume.
 
 The tools referenced live in the pipeline repositories:
 
@@ -30,13 +36,15 @@ The tools referenced live in the pipeline repositories:
 - [cdi-origami-doc](https://github.com/vs-sr-dev/cdi-origami-doc)
 - [cdi-linkthefacesofevil-doc](https://github.com/vs-sr-dev/cdi-linkthefacesofevil-doc)
 - [cdi-merlinsapprentice-doc](https://github.com/vs-sr-dev/cdi-merlinsapprentice-doc)
+- [cdi-theapprentice-doc](https://github.com/vs-sr-dev/cdi-theapprentice-doc)
 
 `cdilib.py`, `cdifs.py`, `cdihead.py`, `os9mod.py`, `cdistrings.py`,
 `cdiaudio.py`, `cdidyuv.py`, `cdirta.py`, `cdipic.py`, `cdicensus.py`,
-`cdisym.py` and `cdistb.py` are platform-general and should work unmodified on
-another disc. `cdigfx.py`, `cdispr.py`, `cditeams.py`, `cdipf.py`,
-`cdianim.py`, `cdibolt.py`, `cditoc.py` and `cdirtf.py` carry title-specific
-tables and are worth reading rather than running.
+`cdisym.py`, `cdistb.py` and `cdiready.py` are platform-general and should work
+unmodified on another disc. `cdigfx.py`, `cdispr.py`, `cditeams.py`, `cdipf.py`,
+`cdianim.py`, `cdibolt.py`, `cditoc.py`, `cdirtf.py`, `cdidat.py`,
+`cdimusic.py` and `cdinvr.py` carry title-specific tables and are worth reading
+rather than running.
 
 **This document is the canonical copy.** Pipelines should link to it rather
 than fork it.
@@ -52,6 +60,59 @@ chdman extractcd -i "TITLE.chd" -o _work/disc.cue -ob _work/disc.bin
 Expect a single `MODE2_RAW` track — or, on an already-extracted dump, a `.cue`
 saying `TRACK 01 CDI/2352`. **Do not** work from a cooked 2,048-byte image: on
 CD-i the subheader is where the interleaving lives, and you lose it.
+
+### If every track says AUDIO, the disc is CD-i Ready — do not stop there
+
+**Read the cue sheet before you read the image.** The Apprentice extracts to
+this:
+
+```
+TRACK 01 AUDIO
+  INDEX 00 00:00:00
+  INDEX 01 15:22:00      <- a 15:22 pregap = 69,150 sectors
+TRACK 02 AUDIO
+...
+TRACK 22 AUDIO
+```
+
+Twenty-two audio tracks, no data track anywhere, and grepping the image for
+`CD-RTOS` finds nothing. That is not a bad dump. **CD-i Ready** puts the entire
+CD-i volume inside track 1's pregap, so that an ordinary audio CD player —
+which begins at INDEX 01 — plays straight past the game and treats the disc as
+an album. The CD-i player starts at LBA 0 and sees a normal volume.
+
+The consequence for your dump is mechanical and total: the ripper followed the
+TOC, saw an audio track, and returned **raw channel data**. Everything from
+byte 12 of every sector is still **scrambled**. Sync survives, because the
+scrambler starts at byte 12, and that is the tell:
+
+```
+LBA 0    stored     00 ff ff ff ff ff ff ff ff ff ff 00  01 82 00 62
+         sync intact ------------------------------^     ^ nonsense
+```
+
+Confirm it with four bytes rather than by eye. A Mode 2 sector at LBA *n*
+carries MSF `(n+150)` in BCD plus mode `02`; the ECMA-130 Annex B sequence
+begins `01 80 00 60`:
+
+```
+  LBA    stored       want       scrambler   xor
+     0   01820062     00020002   01800060    01820062   <-- match
+    16   01821662     00021602   01800060    01821662   <-- match
+  1000   01952562     00152502   01800060    01952562   <-- match
+ 60000   12a20062     13220002   01800060    12a20062   <-- match
+```
+
+Then XOR bytes 12.. of every sector in the pregap and you have an ordinary
+Mode 2 image. `cdiready.py probe` prints the table above; `cdiready.py extract`
+writes the track.
+
+Two things to note once it opens:
+
+- **The volume space size counts the audio.** The Apprentice's descriptor says
+  279,300 blocks; the CD-i area is 69,150. Do not use that field as the size of
+  the data area — use the pregap length from the TOC.
+- **The audio tracks may be in the file system.** See section 3.
 
 Sector layout, 2,352 bytes:
 
@@ -165,11 +226,33 @@ two years and across at least two development houses.
 place — two mono clips of 7.41 s and 8.31 s, bit-identical left and right,
 fundamentals near 151 and 161 Hz. No 512-byte run of one appears in the other.
 
-So: the filler changed somewhere between 1995 and 1997, or between mastering
-facilities. **Hash the descrambled head region of every new disc and compare it
-against both** before spending any time analysing it. That is a thirty-second
-check, it has now answered the question outright three times, and the window it
-covers is wider than the first two discs suggested.
+*The Apprentice*, in **October 1994 — inside the window the trio brackets** —
+carries a **third**:
+
+```
+Apprentice  1994  sectors 18-2267   5,229,000 B  md5 4e61f608e1f1455d9ad5b2a0615dbbd3
+```
+
+So the filler is not one artefact of one tool. Its structure is common across
+all five discs and its content is not, and date does not predict which
+recording you get: a 1994 disc has neither the 1993–95 one nor the 1997 one.
+
+On the *structural* tests The Apprentice sits with Soccer rather than with the
+trio — two separate clips rather than one continuous take, and left
+**bit-identical** to right (100.00 % of frames) rather than merely correlated
+at 0.9988. And its peak is exactly **16,383** = 2^15/2 − 1, which no other
+disc's filler shows: either a 14-bit source or a deliberate 6 dB attenuation.
+
+**Do the comparison properly.** Both clips contain long runs of digital
+silence, so a naive substring search reports matches that are silence matching
+silence. Sample only *non-trivial* windows — reject any window with two or
+fewer distinct byte values — and search both directions. Against Soccer's two
+clips that gives **zero matches in all four directions**.
+
+So: **hash the descrambled head region of every new disc and compare it against
+all three known recordings** before spending any time analysing it. That is a
+thirty-second check, it has now answered the question outright four times, and
+the window it covers is wider than the first two discs suggested.
 
 The 1993–95 recording, measured:
 
@@ -282,9 +365,68 @@ within 0.1 %, and Merlin's on the same bytes lands within 0.07 %.)*
 Run this lag test on your disc. A boundary jump matching lag 7 is the same
 mechanism.
 
-One difference worth recording: Soccer's head clips are **bit-identical** left
-and right; the 1993 recording correlates at 0.9988 but is not identical — a mono
-source through a stereo converter rather than a duplicated channel.
+One difference worth recording: Soccer's and The Apprentice's head clips are
+**bit-identical** left and right; the 1993 recording correlates at 0.9988 but is
+not identical — a mono source through a stereo converter rather than a
+duplicated channel.
+
+### The filler may be written twice, head *and* tail
+
+**[1 of 5]** Link, Origami, Merlin and Soccer all pad the tail of the volume
+with plain zeroes. The Apprentice does not: it writes the identical 2,250-sector
+block a second time, immediately after the last directory sector.
+
+```
+head  18-2267      5,229,000 B  md5 4e61f608e1f1455d9ad5b2a0615dbbd3
+tail  57868-60117  5,229,000 B  md5 4e61f608e1f1455d9ad5b2a0615dbbd3
+```
+
+Same length, same internal run structure — 623 sectors of PCM, 446 of zero,
+1,119 of PCM, 62 of zero — same MD5. **Hash the sectors after your last file as
+well as the ones before your first.** It costs one more call and it is a
+different tool, or the same tool configured differently, whenever it hits.
+
+Whether this is a CD-i Ready consequence — the data area has an audio track
+behind it rather than a lead-out — is not decidable from one disc. The next
+CD-i Ready title settles it.
+
+### An audio-mode dump shows the same region in the clear
+
+The model above says the authoring tool wrote the audio in the *post-scramble
+channel domain*, which is why a data-mode rip — which descrambles — yields
+audio XOR scrambler. **The Apprentice confirms that from the other side.** Its
+dump was never descrambled (section 1), and the identical region reads as
+**plain PCM with no XOR at all**:
+
+```
+raw bytes 24..2347   mean|x| 1750.7   mean|dx| 274.5   ratio 0.157   L==R 100.00 %
+XOR scrambler        mean|x| 16432    mean|dx| 21102   ratio 1.284   L==R   0.00 %
+```
+
+Same object, two views, and the second one is the confirmation the first four
+pipelines could only infer. The sector metadata is identical to the other
+discs: subheader `00 00 20 00` and EDC field `00 00 00 00` on all 2,250 (and on
+all 2,250 of the tail copy too).
+
+### Quote the lag index with its convention
+
+The boundary test reproduces on The Apprentice and gives the same 28 bytes, but
+the *index* differs by one, and the reason is worth writing down so the next
+pipeline does not think it has found a discrepancy.
+
+If `D` frames are missing at a boundary, the two surviving frames either side of
+it are `D + 1` apart in the original stream. So a boundary jump matching
+`mean|x[i] - x[i-k]|` means **`D = k - 1` frames are gone, not `k`**.
+
+```
+Apprentice, left channel, 2,324 B/sector
+  clip A  boundary 1275.2   matches lag 8 (1258.6)   ->  7 frames, 28 bytes
+  clip B  boundary 1200.9   matches lag 8 (1225.5)   ->  7 frames, 28 bytes
+```
+
+which is sync (12) + header (4) + subheader (8) + EDC (4) = 28, the same answer
+the Link and Merlin measurements reach. **State whether your lag number is the
+separation or the loss.**
 
 ---
 
@@ -373,15 +515,45 @@ of system use**: owner group (2), owner user (2), attributes (2), reserved (2),
 file number (1), reserved (1).
 
 Attribute bits: 0 owner-read, 2 owner-exec, 4 group-read, 6 group-exec,
-8 world-read, 10 world-exec, 12 CDDA, 15 directory. Expect `0x0555` for files
-and `0x8111` for directories; anything else is worth a look (Soccer's flagged
-the path table exposed as a file, and so does Link's).
+8 world-read, 10 world-exec, **14 CDDA**, 15 directory. Expect `0x0555` for
+files and `0x8111` for directories; anything else is worth a look (Soccer's
+flagged the path table exposed as a file, and so does Link's).
+
+*(Earlier revisions of this document put CDDA at bit 12, which is what the
+commonly circulated table says. It is bit 14. The Apprentice is the first disc
+here to exercise it: its twenty-two `/CDDA/trackN.cda` entries are the Red Book
+tracks exposed as files — their extents are past the end of the data area
+entirely — and every one carries `0x4111`, while nothing else on the volume sets
+bit 14. Four discs had passed through without touching the bit, so the error
+was invisible.)*
+
+**On a CD-i Ready disc, look for a `/CDDA/` directory.** The audio tracks may be
+addressable as files, which gives you their LBAs and lengths from the directory
+rather than from the TOC, and gives the program a way to name them. The
+Apprentice's are `track2.cda` through `track23.cda` — **numbered by their
+physical track, so the count starts at 2**, because track 1 is the CD-i area
+itself. A CHD or cue will call those same tracks 1 through 22. Expect the
+off-by-one and say which numbering you are using.
+
+**And permissions may actually mean something.** Merlin marks every entry
+`0x0555` whether it is code or not. The Apprentice gives `0x0555` only to the
+seven OS-9 modules and `0x0111` to all 62 data entries, so on that disc the
+execute bit is a reliable filter for "this is a program".
 
 **[2 of 4] The file number byte in the system-use area is `1` on real-time
 files and `0` on everything else.** On Link that byte is the only mechanical
 difference between a 30 MB stream and an executable at the file-system level,
 and it is what tells the driver to hand the file to the real-time reader. Check
 it before you trust any directory size.
+
+**And the byte can simply be wrong.** The Apprentice sets it to 1 on every
+real-time file it built and to **0 on `/CMDS/philips.rtf`** — 625 sectors of
+Form 2 with RL7 video, DYUV and Level B stereo audio across three channels,
+which is unambiguously a stream. That is the one real-time file on the disc the
+studio did not make: it came from the publisher (see section 5b). The program
+opens it anyway. So the byte tells you what the *driver* will do, not what the
+file *is*, and a file supplied from outside the build is where it is most
+likely to disagree.
 
 **And do not read the extension instead.** Merlin's eleven file-number-1
 entries include three `.blt` files that are not streams at all — they are an
@@ -506,12 +678,39 @@ does the same: `M$Name` reads `0x48`, the name starts there, and offsets 72 and
 76 read as `0x6364695f` / `0x6d65726c`, the ASCII of `cdi_merl`. **If those two
 fields look like text, the header is 72 bytes, not 80.**
 
-The name may be followed by the **linker option string** in the same area.
-Origami's main module reads `origami` NUL `-F` NUL, and Merlin's reads
-`cdi_merlin` NUL `-F` NUL — the same option, two years and one continent apart.
-What `-F` selects is not established; it is **not** the symbol-file switch,
-because Origami carries the option and ships no symbol file while Merlin carries
-both.
+### The `-F` after the module name is not a linker option — it is `_cstart`
+
+Earlier revisions of this document recorded that Origami's and Merlin's main
+modules read `<name>` NUL `-F` NUL, and read the `-F` as a linker option string
+of unknown meaning. **It is neither a string nor an option.** It is the first
+instruction of the Microware C entry sequence, rendered as ASCII:
+
+```
+2D46 8010    MOVE.L  D6,-$7FF0(A6)      "-F"
+2D46 8014    MOVE.L  D6,-$7FEC(A6)      "-F"
+3D43 8018    MOVE.W  D3,-$7FE8(A6)      "=C"
+082B 0005    BTST    #5,$0005(A3)
+```
+
+The check that settles it is one field: `M$Exec`. On Merlin's `cdi_merlin` it
+is `0x54`, the name ends at `0x52`, and the sixteen bytes at `0x54` are
+`2d 46 80 10 2d 46 80 14 3d 43 80 18 08 2b 00 05`. The "option" is at the entry
+point. The Apprentice's `cdi_philips`, `cdi_factory` and `cdi_invaders` open
+with the identical sixteen bytes, and its `cdi_loader` appeared to carry a
+different option, `=C`, only because its name is a different length and the
+window lands on the third instruction instead of the first.
+
+**Which makes it a better fingerprint than the thing it was mistaken for:**
+
+```
+2d 46 80 10 2d 46 80 14 3d 43 80 18 08 2b 00 05
+```
+
+Four modules on one disc and one on another, two studios and two years apart,
+open with that run. Grep for it, and treat any module that does *not* have it as
+worth a second look — The Apprentice's `cdi_app`, the one module whose symbol
+file shipped, is the only one on its disc that starts differently
+(`20 7c ff ff 9d d2`, `MOVEA.L #$FFFF9DD2,A0`).
 
 Expect several modules concatenated with no padding — Origami's executable is
 four (`Prgrm`, `Sbrtn`, `Prgrm`, `Trap`) whose sizes sum to the file size
@@ -543,13 +742,19 @@ every disc linking the same library revision, which makes it a free toolchain
 fingerprint and, across enough titles, a way to date a build.
 
 **A negative result is informative.** Merlin has nothing between its header and
-`_cstart` but the module name and the option string — no font, no author list —
+`_cstart` but the module name — no font, no author list —
 and no `Armendariz` and no `cdi_bpsys` anywhere in the binary. It does not link
 the Philips base program system at all; it links a third-party runtime (BOLT)
 whose graphics, audio, input and disc code is all first-party. So the absence of
 that name is not a failed grep, it is a finding: **this title used somebody
 else's engine.** Check what fills the gap before concluding the grep was
 wasted.
+
+**[2 of 5]** The Apprentice has no `Armendariz` and no `cdi_bpsys` either, and
+what fills its gap is neither a Philips library nor a third-party one: a
+9,410-byte `Sbrtn` module the studio wrote (`cdi_start`) plus direct OS-9 calls.
+So the absence has now meant two different things on two discs, and the follow-up
+question — *what is there instead* — is the one that pays.
 
 ### Fingerprint the C runtime
 
@@ -612,6 +817,54 @@ Every branch target is the Microware routine its GCC name calls for, and
 compiled by a GCC-family compiler emitting calls to libgcc, and twenty bytes of
 thunk land them on the Microware runtime instead. A row of equally spaced
 `60 00 xx xx` near the arithmetic helpers is what it looks like without symbols.
+
+---
+
+## 5b. The publisher's bumper is a shared asset — hash it
+
+**[2 of 5]** Discs published under the Philips banner may carry a bumper stream
+that the publisher supplied as a finished file. It is not the studio's work, it
+is **pressed verbatim**, and it is therefore another free identity check of
+exactly the kind the head-region MD5 is.
+
+*The Apprentice* (The Vision Factory, Netherlands, 1994) and *Link: The Faces of
+Evil* (Animation Magic, USA, 1993) carry the same one. Not similar — the same
+bytes:
+
+| stream | channel | coding | sectors | payload | MD5 |
+|---|---:|---|---:|---:|---|
+| RL7 video | 15 | `0x04` | 121 | 278,784 B | `383be6befb8eed0330da9b0815cfc869` |
+| Level B stereo audio | 15 | `0x01` | 149 | 343,296 B | `c8547a7e48868733bdfc90cd5b9ef79a` |
+| DYUV picture | 16 | `0x05` | 40 | 92,160 B | `4f19073bf9f625c6e620a065ad43cb5f` |
+| descriptor | 16 | data | 1 | 2,304 B | differs — 37 bytes, all past offset 2,048 |
+
+**714,240 bytes identical across two studios, two continents and eighteen
+months.** Same channel numbers, same codings, same sector counts. Only the
+single descriptor sector differs, and its first 2,048 bytes match exactly.
+
+The DYUV payload is 40 × 2,304 = 92,160 = **384 × 240**, which is the geometry
+proved by arithmetic rather than guessed — worth knowing before you try to
+decode it.
+
+**The descriptor sector opens with a magic and a field dictionary:**
+
+```
+ba be fa ce  00 00 00 05  00 00 00 00  01 00 00 00 ...
+... "cluts\0count\0filenum\0frame_sizes\0"
+```
+
+`0xBABEFACE`, with the tag names `cluts`, `count`, `filenum`, `frame_sizes`.
+Grep a new disc for `babeface`; it costs nothing and it names the container.
+
+Two practical consequences:
+
+1. **Hash the DYUV payload of any bumper you meet** against
+   `4f19073bf9f625c6e620a065ad43cb5f` before decoding it.
+2. **A bumper's sector metadata may not match the rest of its disc** — see
+   section 3 on the file-number byte, which is wrong on exactly this file.
+
+Merlin's Apprentice, published by the same company, ships no bumper stream at
+all, so this is not universal even within one publisher.
 
 ---
 
@@ -921,6 +1174,14 @@ in 1997, uses one.
 Normal resolution is **384 × 280 on PAL** and **384 × 240 on NTSC**. Both are
 384 bytes to the line for the one-byte-per-pixel codings.
 
+**But not every bitmap on a CD-i disc is 384 wide.** The Apprentice's
+autocorrelation comes back 384 on its full screens and an unambiguous **320** on
+two of its chunks — a 320 × 21 status panel shared byte-for-byte by all six
+level files, and a 320 × 191 chunk in the intro file. Those are sub-screen
+graphics blitted into a 384-wide framebuffer, not display modes. Take the
+measured pitch over the expected one, and let the odd pitch tell you the object
+is not a full screen.
+
 **[all]** **A change of coding byte inside one title marks a change of
 purpose.** Origami is Level C for all five narration tracks and Level B for
 exactly one channel in one file — which turns out to be the only music on the
@@ -930,6 +1191,14 @@ soundtrack except for the final record, which is Level B stereo. Merlin is Level
 B mono everywhere and Level B **stereo** for exactly 149 sectors — every fourth
 sector of one 7.9-second animation, which contains no mono audio at all. Three
 of four discs, three different base levels, and in each case one outlier.
+
+**And a disc may have no outlier at all.** The Apprentice is Level C stereo
+(`0x05`) on every one of the 26,064 audio sectors in its own three real-time
+files — no exception anywhere. Its only other coding bytes are in the two
+bumpers, and one of those is not its own work. So run the census, but do not
+assume the outlier exists: a title that never varies its audio is telling you
+something too, and here what it is telling you is that the music was authored
+as one batch (section 8).
 
 **When you find the odd coding byte out, you have found the thing that was worth
 twice the bandwidth.** On both 1993 discs it was the ending. **On Merlin it is
@@ -996,8 +1265,10 @@ CLUT planes straight out of memory, so a file is very often a framebuffer.
 
 **Entry 0 is the transparency key, but not always green.** Soccer used
 `#00FF00` on almost everything; **Link uses `#FFFFFF` on all 71 of its
-palettes**. The reliable test is not the colour, it is the usage: count how
-often index 0 appears in the pixel data. On Link it appears in only 6 of 71
+palettes**; The Apprentice uses `#000000` on the one 768-byte palette shared by
+all eighteen of its map files. Three discs, three colours. The reliable test is
+not the colour, it is the usage: count how often index 0 appears in the pixel
+data. On Link it appears in only 6 of 71
 pictures, which is what a reserved index looks like.
 
 Origami ships **no palettes at all** — a disc that streams everything may carry
@@ -1210,6 +1481,59 @@ where everything else on the disc is 42–64 %.
 **If your decoded channel length does not match `sectors × 0.2133 s` (Level C)
 or `sectors × 0.1067 s` (Level B), the coding byte is not what you think.**
 
+*(Level C **stereo** is 0.1067 s per sector — the same 4,032 samples split
+between two channels. It is easy to write the mono figure and be out by two on
+a whole disc.)*
+
+### On a CD-i Ready disc the music may ship twice — find the table
+
+**[1 of 5]** The Apprentice carries its whole soundtrack in **both** formats:
+22 Red Book CD-DA tracks (45.85 min, 73.9 % of the pressing) and 22 Level C
+stereo ADPCM channels across three real-time files (46.0 min). One to one,
+nothing exclusive to either.
+
+The reason is architectural rather than indecisive: the symbol table has both
+`cdda_play` and a 60-symbol software mixer with `mix_playcd` and a `mix_cdbusy`
+flag. **The game uses the drive when the drive is free and its own ADPCM when it
+is not.** A CD-i Ready disc has to have the CD-DA anyway, so the second copy is
+nearly free.
+
+**Look for the mapping table in the executable.** It is 22 records of six bytes
+at a global the symbol file calls `music_table`:
+
+```
+u8   CD-DA track number
+u8   channel inside the real-time file
+u32  pointer to the file name
+```
+
+and the three distinct pointer values fall out without any relocation work,
+because the filename globals' addresses differ by exactly `len(name) + 1`.
+
+**Then check it, because the check is free and it closes.** CD-DA sectors ÷ 75
+against ADPCM sectors × 0.1067:
+
+```
+21 of 22 agree to within 0.25 s
+track 15:  CD-DA 66.61 s   ADPCM 93.44 s   +26.83 s
+```
+
+One outlier out of twenty-two, which is a real finding about that piece of
+music rather than a mistake in the reading.
+
+### The interleave may be timed to the drive, and that is a check too
+
+**[1 of 5]** A Level C stereo channel gets one sector in eight at 0.1067 s
+each, and the drive delivers 75 sectors a second — so a channel's **span in
+sectors** is its duration in 75ths of a second, which is also its length as a
+CD-DA track. On The Apprentice `music.rtf` channel 3 spans 21,449 sectors and
+CD-DA track 7 is 21,449 sectors.
+
+Walk the EOR markers, subtract, and compare against something you know the
+duration of. If the numbers line up, the file was authored to play in real time
+at exactly one disc revolution's worth of bandwidth per channel, and your
+channel assignment is right.
+
 ### Check whether the music actually ships
 
 Soccer has a 21-entry sound test naming eight tunes and no file on the disc
@@ -1404,6 +1728,21 @@ rate; expect **368 × 272** at 25 fps for PAL CD-i DV, which is *not* the
 
 ## 9b. Tagged chunks, false positives, and code hiding in data
 
+**[2 of 5] Chunk 0 of an asset file is quite often 68000 code.** Link ships two
+dozen compiled subroutines per playfield; The Apprentice opens the first chunk
+of every level and screen container with a run of `60 00 xx xx` — `BRA.W`
+instructions four bytes apart, at offset 4:
+
+```
+level1.dat  #0   00 00 00 00  60 00 28 76  60 00 28 4e  60 00 28 de ...
+```
+
+A jump table at the top of a loaded block is a **code overlay**: the loader puts
+it somewhere and the engine calls entry *n* through slot *n*. It also explains a
+suspiciously small executable — The Apprentice's game module is 23,236 bytes
+because the per-level logic is not in it. Check for that `60 00` run in the
+first chunk of anything before deciding an asset file is only assets.
+
 Link's data records use four-character tags with a 32-bit length, and this is
 the first disc in the series to do so. Two warnings and one surprise.
 
@@ -1457,6 +1796,24 @@ Getting this wrong is easy in a specific way: a group's member table lives
 convincingly like a gap between groups. **If your "gaps" are all exactly
 `count x record_size`, they are not gaps.**
 
+**[2 of 5] And when the chain does not land, suspect alignment before you
+suspect the layout.** The Apprentice's 45 `.dat` files hold `u16 count` then one
+`u32` size per chunk, and packing the chunks end-to-end from the end of that
+table misses the file size by several kilobytes on every single one. The header
+is padded to **2,048 bytes** and each chunk starts on the next 2,048-byte
+boundary; with that, all 45 land **exactly**, from 106 KB to 776 KB, two to five
+chunks each.
+
+The tell was in the file itself: the first non-zero byte is at `0x800`, not just
+after the size table. **Find the first non-zero byte after the header before you
+choose an origin**, and try sector alignment before concluding the size fields
+mean something other than sizes.
+
+**A container of 45 files that all close is worth more than one that closes
+once.** Repeat the check across every file of the same kind and report the count
+— "45 of 45" is a different claim from "it worked on the one I looked at", and
+`cdidat.py check` is what makes it a one-liner.
+
 ### Settle a compression flag by measurement, not by name
 
 A member record's type byte is worth reading, but do not guess which value means
@@ -1484,36 +1841,44 @@ need to reverse before you can read most of it.
 
 ## 10. Baselines, so you can tell signal from noise
 
-Four very different discs, for comparison:
+Five very different discs, for comparison:
 
-| | Ultra CD-i Soccer (1997) | Origami (1993) | Link: The Faces of Evil (1993) | Merlin's Apprentice (1995) |
-|---|---|---|---|---|
-| Track | 7,875 sectors (1:45), 2.4 % of a CD | 326,400 sectors (72:32), 98 % | 255,924 sectors (56:52), 77 % | 131,610 sectors (29:14), 39.5 % |
-| Entries | 12 dirs, 144 files, 10,635,729 B | 5 dirs, 46 files, 631,506,598 B | **0 dirs, 14 files** | **0 dirs, 18 files** |
-| Pre-FS region | 2,269 sectors, 28.5 % of the image | 2,268 sectors, 0.7 % | 2,269 sectors, 0.9 % | 2,269 sectors, 1.7 % |
-| Head audio | 7.41 s + 8.31 s mono, L = R exactly | **byte-identical to Link and Merlin** | **byte-identical to Origami and Merlin** | **byte-identical to both 1993 discs** |
-| Tail padding | plain zeroes | plain zeroes, 15,770 sectors | plain zeroes + 4 sectors of `0x20` | plain zeroes, 2,258 sectors |
-| Executable | 229,376 B, 2 modules | 82,720 B, 4 modules | 135,168 B, 1 module (+ a 12 KB bumper) | 139,264 B, 1 module, edition 7 |
-| Symbols | none | none | **325 C function names in the binary** | **887, in a `.stb` file in the root** |
-| Streaming | one MPEG file | 79 % of the disc | 99.7 % of the bytes | 88.6 % of the disc |
-| Padding | 19.5 % of the one RTF | 26.7 % of the disc | **49.6 % of the disc** | 38.3 % of the disc |
-| Compression | none, bar the run-length sprites | none, anywhere | RL7 for everything that moves, 10.7:1 | BOLT, on 54 % of the library, **1.17:1** |
-| Graphics | raw CLUT bitmaps + palettes on disc | DYUV and CLUT7, real-time only | CLUT7 playfields, RL7 cels, one DYUV still | inside the BOLT container; frame codec unidentified |
-| Palettes | 192/384/768 B, entry 0 `#00FF00` | **none on the disc at all** | 384 B inline, entry 0 `#FFFFFF` | 390 B BOLT members, 6 + 128 × 3 |
-| Audio | 12 effects, 10.2 s, Level C in AIFF-C | 5 languages, 3 h 57 m, raw | **100.8 min**, Levels B and C, raw | 47 min, Level B mono, raw |
-| Video | MPEG-1 368 × 272 | 40 files, 7 streams each, no MPEG | no MPEG; RL7, CLUT7, DYUV | no MPEG; 89 animations in 7 files |
-| All-zero files | 16, totalling 1,070,080 B | none | none | none |
-| Dangling path references | 8 | none | none | none |
-| Duplicated files | none | none | **the same 30 MB pressed 3× (11.5 %)** | **the same 8 MB pressed 3× (7.9 %)** |
-| Languages shipped | English only | five — one of them not on the box | English only | English only |
+| | Ultra CD-i Soccer (1997) | Origami (1993) | Link: The Faces of Evil (1993) | Merlin's Apprentice (1995) | The Apprentice (1994) |
+|---|---|---|---|---|---|
+| Track | 7,875 sectors (1:45), 2.4 % of a CD | 326,400 sectors (72:32), 98 % | 255,924 sectors (56:52), 77 % | 131,610 sectors (29:14), 39.5 % | **no data track** — 69,150-sector pregap of track 1 (19.9 %), plus 22 CD-DA tracks (73.9 %) |
+| Entries | 12 dirs, 144 files, 10,635,729 B | 5 dirs, 46 files, 631,506,598 B | **0 dirs, 14 files** | **0 dirs, 18 files** | 2 dirs, 91 files — 69 CD-i files of 113,851,360 B, plus 22 CD-DA entries |
+| Pre-FS region | 2,269 sectors, 28.5 % of the image | 2,268 sectors, 0.7 % | 2,269 sectors, 0.9 % | 2,269 sectors, 1.7 % | 2,268 sectors, 0.8 % — **and an identical 2,250-sector copy after the last file** |
+| Head audio | 7.41 s + 8.31 s mono, L = R exactly | **byte-identical to Link and Merlin** | **byte-identical to Origami and Merlin** | **byte-identical to both 1993 discs** | **a third recording**: 8.21 s + 14.74 s, L = R exactly, peak 16,383 |
+| Tail padding | plain zeroes | plain zeroes, 15,770 sectors | plain zeroes + 4 sectors of `0x20` | plain zeroes, 2,258 sectors | the head block again, then 9,032 sectors of CD-DA silence |
+| Executable | 229,376 B, 2 modules | 82,720 B, 4 modules | 135,168 B, 1 module (+ a 12 KB bumper) | 139,264 B, 1 module, edition 7 | 23,236 B game module; 9 modules over 6 files |
+| Symbols | none | none | **325 C function names in the binary** | **887, in a `.stb` file in the root** | **521, in a `.stb` file in `/CMDS/`** |
+| Streaming | one MPEG file | 79 % of the disc | 99.7 % of the bytes | 88.6 % of the disc | 69.5 % of the CD-i area, all of it music |
+| Padding | 19.5 % of the one RTF | 26.7 % of the disc | **49.6 % of the disc** | 38.3 % of the disc | 23-68 % per RTF; **zero free sectors between the path table and the last file** |
+| Compression | none, bar the run-length sprites | none, anywhere | RL7 for everything that moves, 10.7:1 | BOLT, on 54 % of the library, **1.17:1** | none, anywhere |
+| Graphics | raw CLUT bitmaps + palettes on disc | DYUV and CLUT7, real-time only | CLUT7 playfields, RL7 cels, one DYUV still | inside the BOLT container; frame codec unidentified | CLUT7 and CLUT8 in `.dat` containers, pitches 384 **and 320** |
+| Palettes | 192/384/768 B, entry 0 `#00FF00` | **none on the disc at all** | 384 B inline, entry 0 `#FFFFFF` | 390 B BOLT members, 6 + 128 × 3 | 384 B and 768 B, entry 0 `#000000` |
+| Audio | 12 effects, 10.2 s, Level C in AIFF-C | 5 languages, 3 h 57 m, raw | **100.8 min**, Levels B and C, raw | 47 min, Level B mono, raw | 46 min ADPCM, **all Level C stereo**, plus the same 46 min as CD-DA |
+| Video | MPEG-1 368 × 272 | 40 files, 7 streams each, no MPEG | no MPEG; RL7, CLUT7, DYUV | no MPEG; 89 animations in 7 files | no MPEG; **no video streams of its own at all** |
+| All-zero files | 16, totalling 1,070,080 B | none | none | none | none |
+| Dangling path references | 8 | none | none | none | none — 20 templates cover all 56 assets exactly |
+| Duplicated files | none | none | **the same 30 MB pressed 3× (11.5 %)** | **the same 8 MB pressed 3× (7.9 %)** | none; the **filler block** is pressed twice |
+| Languages shipped | English only | five — one of them not on the box | English only | English only | English only |
 
-The four discs bracket the format. Soccer is what a *game* looks like on CD-i
+The five discs bracket the format. Soccer is what a *game* looks like on CD-i
 when the program owns its assets: small files, a big executable, everything
 loaded. Origami is what a *presentation* looks like: a tiny executable that owns
 nothing and streams every pixel, including every letter of every menu. Link is
 the hybrid and the most extreme case — a game whose executable owns almost
 nothing, whose levels arrive as code and pixels together, and which spends half
 its surface on keeping the drive fed.
+
+**The Apprentice is the fifth shape, and the only one that is not a plain data
+disc.** It owns everything, like Soccer and Merlin, in 45 containers of its own
+format; but it is CD-i Ready, so three quarters of the pressing is Red Book
+audio a CD-i player never touches, and the game carries a second ADPCM copy of
+that same audio for when it needs the drive. Its executable is the smallest of
+the five by a factor of six, because the per-level logic ships as 68000 overlays
+inside the asset files.
 
 **Merlin is the fourth shape: a game on somebody else's engine.** It owns
 everything, like Soccer, but keeps it in one archive rather than 144 files, so
@@ -1523,9 +1888,10 @@ dead files, which is the combination the first three discs would not have
 predicted.
 
 If your disc compresses something, has more than one directory level, ships
-palettes for CLUT data, uses MPEG, carries symbols, or keeps its assets in a
-container with its own header, it is doing something at least one of these did
-not. **Carry the method forward, not the numbers.**
+palettes for CLUT data, uses MPEG, carries symbols, keeps its assets in a
+container with its own header, or hides its whole volume in a pregap, it is
+doing something at least one of these did not. **Carry the method forward, not
+the numbers.**
 
 ### Count the languages yourself
 
@@ -1547,12 +1913,19 @@ round-robin (a jukebox, as on Link and Merlin).
 
 ## 11. Order of work that worked
 
-1. Extract to a raw image; confirm one `MODE2_RAW` / `CDI/2352` track and note
-   the capacity used. That number sets your expectations for everything else.
+1. **Read the cue sheet before the image.** One `MODE2_RAW` / `CDI/2352` track
+   is the normal case. If every track says `AUDIO` and track 1 has a pregap of
+   tens of thousands of sectors, the disc is **CD-i Ready**: the volume is in
+   that pregap and your dump is scrambled. `cdiready.py probe` confirms it in
+   four bytes and `cdiready.py extract` fixes it. Either way, note the capacity
+   used — that number sets your expectations for everything else.
 2. `cdihead.py map` — the pre-file-system region, before anything else. **Hash
-   the descrambled region (2,324 bytes per sector) and compare it against the
-   known 1993–95 recording (`a0ed87f2e98b43f91281d16390fb178b`) before analysing
-   anything.** Three of four discs so far match it outright.
+   the region (2,324 bytes per sector, descrambled if your dump was data-mode)
+   and compare it against the three known recordings before analysing
+   anything** — `a0ed87f2e98b43f91281d16390fb178b` (1993–95),
+   `4e61f608e1f1455d9ad5b2a0615dbbd3` (The Apprentice, 1994), and Soccer's
+   1997 pair. Three of five discs match the first outright. **Hash the sectors
+   after your last file too**: on one disc so far they are the same block again.
 3. Volume descriptor and path table; note the application identifier, the
    publisher and the data preparer.
 4. `cdifs.py list` / `map` / `extract`; note which entries have file number 1;
@@ -1564,9 +1937,11 @@ round-robin (a jukebox, as on Link and Merlin).
    `cdisym.py list` on every executable. If the symbols are there, everything
    after this is easier — prove the address model against `M$Size` and `M$Exec`,
    then read them in address order.
-6. `os9mod.py`: parity and CRC on every module; the bytes after each header;
-   grep for `Armendariz`; look for the `_chcodes` table and for a row of equally
-   spaced `60 00 xx xx` near the arithmetic helpers.
+6. `os9mod.py`: parity and CRC on every module; the bytes after each header —
+   remembering that a `-F` there is `MOVE.L D6,-$7FF0(A6)`, not a linker option;
+   grep for `Armendariz` and for the sixteen-byte `_cstart` prologue; look for
+   the `_chcodes` table and for a row of equally spaced `60 00 xx xx` near the
+   arithmetic helpers.
 7. `cat` the copyright / abstract / bibliographic files — and anything else in
    the root that nothing references. Grep them for `@(#)`.
 8. Filtered strings, with epilogue bytes stripped; then the two-way path
@@ -1581,7 +1956,11 @@ round-robin (a jukebox, as on Link and Merlin).
 12. Graphics: palette sizes → pixel-value ceilings → autocorrelated pitch →
     **prove the total to the byte** → render everything.
 13. Tagged chunks and containers, validated by chaining them until they land
-    exactly on a header field, and check whether any of them is code.
+    exactly on a header field or on the file size — try sector alignment before
+    giving up on a layout — and check whether any of them is code. **Report how
+    many files the check closed on, not that it closed.**
+14. If the disc carries CD-DA, look for the table in the executable that maps
+    tracks onto anything else, and cross-check the durations both ways.
 
 Write down what does *not* resolve. Half of what makes a disc interesting is the
 list of things that are measurably odd and not yet explained.
