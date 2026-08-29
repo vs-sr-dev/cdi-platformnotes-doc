@@ -41,6 +41,10 @@ from, and is the kind of thing to test rather than assume.
 
 ## Discs it is drawn from
 
+Every disc below has its own repository, and the full write-up for each one lives in
+the family index: **[cdi-gamelist-doc](https://github.com/vs-sr-dev/cdi-gamelist-doc)**. The table here stays
+the short form; the index is where the prose is.
+
 | Disc | Year | What it is |
 |---|---|---|
 | [Ultra CD-i Soccer](https://github.com/vs-sr-dev/cdi-ultracdisoccer-doc) | 1997 | Krisalis / Philips, UK — a game: 144 small files, raw CLUT bitmaps, one MPEG-1 intro, 2.4 % of a CD used |
