@@ -1,8 +1,15 @@
 # CD-i platform notes — a checklist for the next disc
 
 A running checklist, carried from one CD-i documentation pipeline to the next
-and added to by each. It now covers **six discs, five years and two continents
+and added to by each. It now covers **seven discs, six years and two continents
 apart**:
+
+- **A Visit to Sesame Street — Letters** (American Interactive Media, USA,
+  **September 1991**) — a place rather than a game, and the oldest disc here by
+  eleven and a half months: 14 entries in a flat root, 86 % of a CD, 98.4 % of
+  its bytes in eight real-time files, four painted 640-pixel rooms with a
+  hot-spot table over them, **13,138 DYUV frames of alphabet cartoons at
+  172 × 108**, and no text file of any kind.
 
 - **Laser Lords** (Spinnaker Software / American Interactive Media, published by
   Philips Interactive Media of America, USA, **1992**) — a streaming adventure
@@ -31,10 +38,10 @@ apart**:
   in the executable. It too left the linker's symbol file behind.
 
 They have almost nothing in common at the content level, which makes the things
-they *do* share worth trusting. Those are marked **[all]** when all six agree
-and **[N of 6]** when fewer do.
+they *do* share worth trusting. Those are marked **[all]** when all seven agree
+and **[N of 7]** when fewer do.
 
-*Every mark in this document now reads `of 6`.* Earlier revisions carried marks
+*Every mark in this document now reads `of 7`.* Earlier revisions carried marks
 reading `[N of 4]` and `[N of 5]` that the document itself declared had not
 been rechecked, and two sessions of postponing them had turned them into
 furniture. The sixth pipeline went through all of them: those the sixth disc
@@ -45,6 +52,13 @@ An unexercised claim keeps its numerator and takes the new denominator; it does
 not keep an old one. Findings from only one disc are named, and are the ones to
 test rather than assume.
 
+**The seventh pipeline did the same pass**, and three marks moved for a reason
+worth naming rather than by simple increment: the head-padding mark (§2) gained
+a *second* exception for a *different* reason, the publisher's-bumper mark (§5b)
+went from 2 of 6 to **4 of 7** because the 1992 bumper turned out not to be
+unique to the disc it was found on, and the Level A mark (§7a) went from 1 of 6
+to **2 of 7** and took a correction with it.
+
 The tools referenced live in the pipeline repositories:
 
 - [cdi-ultracdisoccer-doc](https://github.com/vs-sr-dev/cdi-ultracdisoccer-doc)
@@ -53,6 +67,7 @@ The tools referenced live in the pipeline repositories:
 - [cdi-merlinsapprentice-doc](https://github.com/vs-sr-dev/cdi-merlinsapprentice-doc)
 - [cdi-theapprentice-doc](https://github.com/vs-sr-dev/cdi-theapprentice-doc)
 - [cdi-laserlords-doc](https://github.com/vs-sr-dev/cdi-laserlords-doc)
+- [cdi-avisittosesamestreetletters-doc](https://github.com/vs-sr-dev/cdi-avisittosesamestreetletters-doc)
 
 `cdilib.py`, `cdifs.py`, `cdihead.py`, `os9mod.py`, `cdistrings.py`,
 `cdiaudio.py`, `cdidyuv.py`, `cdirta.py`, `cdipic.py`, `cdicensus.py`,
@@ -62,15 +77,21 @@ unmodified on another disc. `cdigfx.py`, `cdispr.py`, `cditeams.py`, `cdipf.py`,
 `cdimusic.py` and `cdinvr.py` carry title-specific tables and are worth reading
 rather than running.
 
+The seventh pipeline adds two more: `cdifilm.py` (a real-time video stream cut
+into frames, with the slot proved from the sector run rather than assumed) and
+`cdiclut.py` (a CLUT7 picture and the palette that sits in its own stream).
+`cdi-avisittosesamestreetletters-doc/notes/sha1-all.txt` makes **seven**
+published hash lists, 338 records.
+
 The sixth pipeline adds five that have no ancestor:
 `cdiscan.py` (one pass over every sector into a fixed-width cache, so nothing
 else has to make one), `cdiscramble.py` (the ECMA-130 stream, and the reason
 section 2's hashes cannot be compared against image bytes), `lagcheck.py` (the
 control that settles section 2's byte count), `cdixref.py` (the two-way
 reference graph with a name filter that cannot invent a filename) and
-`sixdiscs.py` (all six discs at once: hash lists, head regions, sector-prefix
-comparison). **`cdi-laserlords-doc/notes/sha1-all.txt` and its five siblings
-are the branch's first published hash lists** — see section 12.
+`sixdiscs.py` (all seven discs at once: hash lists, head regions, sector-prefix
+comparison). **`cdi-laserlords-doc/notes/sha1-all.txt` and its six siblings
+are the branch's published hash lists** — see section 12.
 
 **This document is the canonical copy.** Pipelines should link to it rather
 than fork it.
@@ -157,8 +178,8 @@ Submode bits: `0x01` EOR, `0x02` video, `0x04` audio, `0x08` data, `0x10`
 trigger, `0x20` Form 2, `0x40` real-time, `0x80` EOF.
 
 **Note the capacity used before anything else.** A CD holds about 333,000
-sectors. Soccer uses 7,875 of them, Merlin 131,610, Link 255,924, **Laser Lords
-290,955** and Origami 326,400. That one number sets your expectations for everything that follows: a
+sectors. Soccer uses 7,875 of them, Merlin 131,610, Link 255,924, **Letters 286,330**, Laser Lords
+290,955 and Origami 326,400. That one number sets your expectations for everything that follows: a
 disc at 2 % of capacity will have dead files lying around, and a disc at 98 %
 will not. The middle of the range is its own signal — Merlin, at 39.5 %, has no
 dead files at all but spends 7.9 % of the pressing on two redundant copies of
@@ -169,7 +190,7 @@ one library, which is what having room and no reason to economise looks like.
 ## 2. Check the pre-file-system region — this is the highest-yield first move
 
 **[all]** **Run this before anything else.** It turned up 5.2 MB on every disc
-so far — six of six — and on none of them can the program reach it.
+so far — seven of seven — and on none of them can the program reach it.
 
 **And hash it in the right domain.** Everything below that quotes an MD5 quotes
 it for the *descrambled audio*, not for the bytes in the image. A data-mode rip
@@ -211,9 +232,16 @@ Signals that a region is real audio rather than noise:
 inherited, not earned.** Verify it on your disc before writing the word "audio"
 down: compute the smoothness ratio, check L against R, and take an FFT.
 
-**[5 of 6]** **Compare the head against the tail.** The tail padding is *plain*
-zeroes while the head padding is *scrambled*, on five of the six; The
-Apprentice is the exception because it writes the head block again (below).
+**[5 of 7]** **Compare the head against the tail.** The tail padding is *plain*
+zeroes while the head padding is *scrambled*, on five of the seven, and there
+are now **two exceptions for two different reasons**: The Apprentice writes the
+head block again instead of padding (below), and *A Visit to Sesame Street:
+Letters* writes its lead-in as **plain** zero rather than scrambled zero. On
+that disc sectors 0–15 and 18 have a correct twelve-byte sync, a correct MSF
+header and a valid `00 00 20 00` subheader, and 2,324 bytes of ordinary zero.
+**Which kind of zero a lead-in holds is a per-disc setting, so measure it
+rather than inheriting the label** — `cdiscramble.py selftest` now reports both
+tests and names the case instead of asserting one of them.
 Two filler mechanisms in one image means two different tools touched it, and it
 has now held on five unrelated pressings.
 
@@ -275,6 +303,7 @@ later**, makes it three, and *Laser Lords*, mastered **nine months earlier than
 any of them**, makes it four:
 
 ```
+Letters      1991-09  sectors 19-2268  5,229,000 B  md5 a0ed87f2e98b43f91281d16390fb178b
 Laser Lords  1992-08  sectors 19-2268  5,229,000 B  md5 a0ed87f2e98b43f91281d16390fb178b
 Link         1993-06  sectors 19-2268  5,229,000 B  md5 a0ed87f2e98b43f91281d16390fb178b
 Origami      1993-05  sectors 18-2267  5,229,000 B  md5 a0ed87f2e98b43f91281d16390fb178b
@@ -283,10 +312,10 @@ Merlin       1995-01  sectors 19-2268  5,229,000 B  md5 a0ed87f2e98b43f91281d163
 
 All 5,229,000 bytes. Same MD5. **The recording is not title content — it is an
 artefact of the CD-i authoring chain**, laid down by whatever tool wrote the
-pre-file-system region — and the window it covers is now **1992-08-31 to
-1995-01-31**: two years and five months, three development houses, two
-continents. It is no longer "the 1993–95 recording"; call it the **1992–95**
-one.
+pre-file-system region — and the window it covers is now **1991-09-13 to
+1995-01-31**: three years, four and a half months, four development houses, two
+continents. It has been called the 1993–95 recording and then the 1992–95 one;
+**call it the 1991–95 recording**, and expect the left edge to move again.
 
 **And on Laser Lords the identity does not stop at the region.** Compared
 against Link sector by sector over everything in front of the file system:
@@ -308,7 +337,7 @@ region hash into a boundary.
 place — two mono clips of 7.41 s and 8.31 s, bit-identical left and right,
 fundamentals near 151 and 161 Hz. No 512-byte run of one appears in the other.
 
-*The Apprentice*, in **October 1994 — inside the window the trio brackets** —
+*The Apprentice*, in **October 1994 — inside the window the other five bracket** —
 carries a **third**:
 
 ```
@@ -316,11 +345,11 @@ Apprentice  1994  sectors 18-2267   5,229,000 B  md5 4e61f608e1f1455d9ad5b2a0615
 ```
 
 So the filler is not one artefact of one tool. Its structure is common across
-all five discs and its content is not, and date does not predict which
-recording you get: a 1994 disc has neither the 1993–95 one nor the 1997 one.
+all seven discs and its content is not, and date does not predict which
+recording you get: a 1994 disc has neither the 1991–95 one nor the 1997 one.
 
 On the *structural* tests The Apprentice sits with Soccer rather than with the
-trio — two separate clips rather than one continuous take, and left
+group — two separate clips rather than one continuous take, and left
 **bit-identical** to right (100.00 % of frames) rather than merely correlated
 at 0.9988. And its peak is exactly **16,383** = 2^15/2 − 1, which no other
 disc's filler shows: either a 14-bit source or a deliberate 6 dB attenuation.
@@ -333,22 +362,24 @@ clips that gives **zero matches in all four directions**.
 
 So: **hash the descrambled head region of every new disc and compare it against
 all three known recordings** before spending any time analysing it. That is a
-thirty-second check, it has now answered the question outright five times, and
+thirty-second check, it has now answered the question outright six times, and
 the window it covers is wider than the first two discs suggested. Three
-recordings over six discs:
+recordings over seven discs:
 
 ```
-a0ed87f2e98b43f91281d16390fb178b   4 discs: Laser Lords 1992, Link 1993,
-                                            Origami 1993, Merlin 1995
+a0ed87f2e98b43f91281d16390fb178b   5 discs: Letters 1991, Laser Lords 1992,
+                                            Link 1993, Origami 1993,
+                                            Merlin 1995
 4e61f608e1f1455d9ad5b2a0615dbbd3   1 disc:  The Apprentice 1994
 d1bc6b7dbed8abfd30df0ff4c7cada48   1 disc:  Ultra CD-i Soccer 1997
 ```
 
-`python tools/sixdiscs.py head` prints that table for all six at once
-(`cdi-laserlords-doc`). **Every one of those hashes is of the descrambled
+`python tools/sixdiscs.py head` prints that table for all seven at once
+(`cdi-avisittosesamestreetletters-doc`, extended from the six-disc version in
+`cdi-laserlords-doc`). **Every one of those hashes is of the descrambled
 audio.**
 
-The 1993–95 recording, measured:
+The 1991–95 recording, measured:
 
 ```
 29.64 s at 44,100 Hz stereo      1,307,250 frames   (2,324 B/sector)
@@ -381,9 +412,9 @@ only ears can close.
 
 Origami worked this out, and Link and Merlin confirm it on identical data.
 
-**[5 of 6]** The head sectors have correct sync, a correct MSF header, a valid
+**[6 of 7]** The head sectors have correct sync, a correct MSF header, a valid
 subheader — and the subheader is `00 00 20 00` on all 2,250 sectors of Origami,
-Link, Merlin, The Apprentice and Laser Lords alike: Form 2 with none of the
+Link, Merlin, The Apprentice, Laser Lords and Letters alike: Form 2 with none of the
 data, audio or video bits set, a sector declaring itself to be of no type at
 all. **What is in the four-byte EDC field varies, and it is the one place these
 four otherwise identical regions differ** — see below.
@@ -431,21 +462,40 @@ Merlin  EDC field values:  {'00000000': 2249, '333448aa': 1}
         sector 2,268 stored, LE    aa483433   <== valid
 ```
 
-**And Laser Lords, in 1992, computes all 2,250.** Three discs whose payload is
-byte-identical, three different answers:
+**And Laser Lords, in 1992, computes all 2,250.** Four discs whose payload is
+byte-identical, four different answers:
 
 ```
                 sectors 19..2268     EDC valid   wrong   zeroed
+  Letters       1991-09                     0        0     2250
   Laser Lords   1992-08                  2250        0        0
   Link          1993-06                     0        0     2250
   Merlin        1995-01                     1        0     2249
 ```
 
-Since the payload is the same on all three, the *correct* EDC of each sector is
-the same number on all three; only whether it was written differs. The oldest
-disc is the one that finished every sector. So this field is not a version
-marker and does not improve with time — it is a setting, and it is the only
-thing that distinguishes four otherwise byte-identical regions.
+Since the payload is the same on all four, the *correct* EDC of each sector is
+the same number on all four; only whether it was written differs.
+
+**The seventh pipeline was asked to settle whether this is a setting or a
+drift, and the answer is: a setting with no covariate.** Read the four discs
+down every column that could explain them and none does.
+
+```
+  disc          year     preparer field              publisher field                  EDC
+  Letters       1991-09  Katie Moriarty and Greg B.  American Interactive Media       zeroed
+  Laser Lords   1992-08  _ISG_CDI_TOOLS_1.6          Philips Interactive Media of A.  computed
+  Link          1993-06  _ISG_CDI_TOOLS_1.6          Philips Intractive Media of A.   zeroed
+  Merlin        1995-01  _ISG_CDI_TOOLS_1.6          PHILIPS INTERACTIVE MEDIA OF A.  2249 zeroed
+```
+
+The year does not predict it — the **oldest** disc zeroes and the second-oldest
+computes. The preparer string does not predict it — three discs carry
+`_ISG_CDI_TOOLS_1.6` character for character and give two and a half different
+answers. The publisher does not predict it — the same operation produced both.
+And the one disc that carries neither that tool string nor that publisher
+behaves like two of the three that do. **Four samples, no covariate**, and the
+negative is the result. Record both settings on every new disc anyway; a fifth
+sample is the only thing that improves this.
 
 Check the whole run and the last sector of it separately. **And do not use the
 EDC field as evidence about what the filler overwrote** — see the next block.
@@ -485,8 +535,8 @@ duplicated channel.
 
 ### The filler may be written twice, head *and* tail
 
-**[1 of 6]** Link, Origami, Merlin, Soccer and Laser Lords all pad the tail of
-the volume with plain zeroes. The Apprentice does not: it writes the identical 2,250-sector
+**[1 of 7]** Link, Origami, Merlin, Soccer, Laser Lords and Letters all pad the
+tail of the volume with plain zeroes. The Apprentice does not: it writes the identical 2,250-sector
 block a second time, immediately after the last directory sector.
 
 ```
@@ -561,13 +611,13 @@ python tools/lagcheck.py control            (cdi-laserlords-doc)
 ```
 
 The estimator returns `k - 1` for every D from 0 to 7. So on the three discs
-carrying the 1992–95 recording the loss is **six frames, 24 bytes** — sync,
+carrying the 1991–95 recording the loss is **six frames, 24 bytes** — sync,
 header and subheader, and **not** the EDC field. On The Apprentice, whose
 filler is a different recording written by a different tool, it is seven frames
 and 28 bytes.
 
 Two independent corroborations that the EDC field was never audio on the
-1992–95 trio: Laser Lords carries **2,250 correctly computed EDCs** in that
+1991–95 group: Laser Lords carries **2,250 correctly computed EDCs** in that
 field (a checksum cannot also be a sample), and the "extending to 2,328 bytes
 makes it worse" test proves nothing either way, because Link's four bytes there
 are zero.
@@ -605,11 +655,21 @@ Things to grab immediately:
   Soccer all three disagreed (`Ultra CD-i Soccer` on the box, `CD-i Soccer` as
   the volume, `CMDS/cdi_demo` as the application, `cdi_main.mod` as the module).
   On Origami, Link and Merlin all three agree, and the path has no directory
-  component at all — the boot file sits in the root. Three of four discs
-  therefore make this field trustworthy and the fourth makes it interesting;
-  either way it is one read.
-- **[all]** **`copyright`, `abstract` and `biblio`, if named, are plain text on
-  the disc.** Always `cat` all three. Soccer's held marketing copy and the
+  component at all — the boot file sits in the root. On *Letters* the field
+  says `cdi_ctw`, the root holds a file of that name, and the OS-9 module
+  inside it is called `cdi_ctw` — but the **volume** id is `CTW Letters` and
+  the box says *A Visit to Sesame Street: Letters*, so on that disc the
+  application identifier agrees with the module and with nothing else. Five of
+  seven discs make this field trustworthy and two make it interesting; either
+  way it is one read.
+- **[6 of 7]** **`copyright`, `abstract` and `biblio`, if named, are plain text
+  on the disc.** Always `cat` all three. *(Re-declared rather than rechecked:
+  A Visit to Sesame Street: Letters names none of the three — all three fields
+  are 32 spaces — so it cannot exercise the claim. The denominator moves and
+  the numerator does not. **And the absence is itself the finding on that
+  disc**: with no text file, no symbol table and no `printf`, the only two
+  human names anywhere on it are in the data-preparer field, and the only
+  place its own abbreviation is expanded is a picture. Section 5b.)* Soccer's held marketing copy and the
   complete credits. Origami's held the credits, a placeholder abstract
   (`ORIGAMI is great!`) and three different spellings of the publisher's own
   name, one of them inside the copyright notice. **Link's `BIBLIOGRAPHY` is the
@@ -648,6 +708,7 @@ Things to grab immediately:
   years and three development houses apart**:
 
   ```
+  letters     1991  Katie Moriarty and Greg Brooks  American Interactive Media
   laserlords  1992  _ISG_CDI_TOOLS_1.6        Philips Interactive Media of America
   link        1993  _ISG_CDI_TOOLS_1.6        Philips Intractive Media of America, Inc.
   merlin      1995  _ISG_CDI_TOOLS_1.6        PHILIPS INTERACTIVE MEDIA OF AMERICA, 1994
@@ -656,8 +717,13 @@ Things to grab immediately:
   soccer      1997  (blank)                   Philips Interactive Media
   ```
 
-  **[3 of 6]**, and the three are exactly the three whose publisher field says
-  *Philips Interactive Media of America*. No other disc carries the string and
+  **[3 of 7]**, and the three are exactly the three whose publisher field says
+  *Philips Interactive Media of America*. **The oldest disc of the seven does
+  not carry the tool string** — its preparer field is two people's names — so
+  the window in which that mastering line was in service still opens in 1992-08
+  and does not move left. On a disc eleven and a half months older than the
+  earliest instance, that negative is worth as much as a positive would have
+  been. No other disc carries the string and
   no disc carrying it has a different publisher, so on this evidence it is that
   operation's mastering line rather than a tool version in general circulation.
   A dating tool with a window of 1992-08 to 1995-01 and a version number that
@@ -702,8 +768,10 @@ off-by-one and say which numbering you are using.
 seven OS-9 modules and `0x0111` to all 62 data entries, so on that disc the
 execute bit is a reliable filter for "this is a program".
 
-**[3 of 6] The file number byte in the system-use area is `1` on real-time
-files and `0` on everything else.** On Laser Lords it is 1 on all twenty-two
+**[4 of 7] The file number byte in the system-use area is `1` on real-time
+files and `0` on everything else.** *(Letters makes it four: 1 on all eight
+`.rtf` and 0 on all six others, including the two `.map` files that describe
+bumper streams and the executable itself, with no exception.)* On Laser Lords it is 1 on all twenty-two
 `.rtf` entries and 0 on all eleven others, **including both publisher-supplied
 bumpers**, with no exception anywhere. On Link that byte is the only mechanical
 difference between a 30 MB stream and an executable at the file-system level,
@@ -729,12 +797,13 @@ file-system sense need not be a stream in the content sense.
 
 **A flat root is normal for a streaming disc.** Soccer has 12 directories and
 144 files; Origami has 5 and 46; The Apprentice 2 and 91; **Link has none and
-14**; **Merlin has none and 18**; **Laser Lords has none and 33**. Three of six
-have no directory at all.
+14**; **Merlin has none and 18**; **Laser Lords has none and 33**; **Letters
+has none and 14**. Four of seven have no directory at all.
 
 **And one of those entries may be the file system describing itself.** Soccer,
-Link, Merlin and Laser Lords all expose the **path table as a file** — ten
-bytes on the three flat-rooted ones, and byte-identical across them, because a
+Link, Merlin, Laser Lords and Letters all expose the **path table as a file** —
+ten bytes on the four flat-rooted ones, and byte-identical across them
+(sha1 `6fa9eb5c50bcb6e9e6b82b51128ad52649a0e186`), because a
 Green Book path table for a single-directory volume with its root at LBA 2,270
 is the same ten bytes whoever made the disc. Expect it in the listing, expect
 it to be named by nothing, and do not count it among the title's files. Directory count correlates with how much the program owns rather than
@@ -792,7 +861,7 @@ python tools/cdifs.py map     # who owns each sector, with submode flags
   two runs of 2,872 sectors sit immediately in front of the two files the game
   must start streaming without a hitch — 38 seconds of disc for the drive to
   settle.
-- **[2 of 6] Hash every file's payload *and* its subheaders.** Link presses the
+- **[2 of 7] Hash every file's payload *and* its subheaders.** Link presses the
   same 30 MB file three times — `ldata.rtr`, `ldata1.rtr`, `ldata2.rtr`, byte-
   identical down to the channel and submode bytes — at LBA 2,992, 115,786 and
   235,940. That is 11.5 % of the disc spent so a single-speed drive is never far
@@ -802,9 +871,18 @@ python tools/cdifs.py map     # who owns each sector, with submode flags
   four now trade space for head movement this way, so **if two files hash the
   same, look at their LBAs before calling it a mistake.**
 
-  **Laser Lords does it below the file level.** No two of its thirty-three files
-  hash the same, but all seven `world.rtf` streams carry the identical 56-sector
-  Level C clip on channel 7 — `2335288f50bf7313c7f57bb6d687d194`, 130,144 bytes
+  **Two discs now do it below the file level, and one of them is the cheapest
+  instance of the pattern yet.** *Letters* presses the same 640 x 244 CLUT7
+  picture of Sesame Street into all four of its location files — `street.rtf`,
+  `nest.rtf`, `apt.rtf` and `cave.rtf`, md5 `6f6de076a4ac9668a657af3cfdf7f0cd`
+  four times, 474,096 redundant bytes and **0.07 % of the disc** — so that
+  walking back to the street from any room costs no seek. Link spends 11.5 %
+  and Merlin 7.9 % of their surfaces on the same trade at the file level; that
+  disc spends a rounding error on it at the picture level.
+
+  **Laser Lords does it below the file level too.** No two of its thirty-three
+  files hash the same, but all seven `world.rtf` streams carry the identical
+  56-sector Level C clip on channel 7 — `2335288f50bf7313c7f57bb6d687d194`, 130,144 bytes
   — so 780,864 bytes are pressed six extra times to put an arrival sound at the
   head of every world. **A duplicate need not be a whole file**, and a file-level
   hash list cannot see one that is not.
@@ -850,7 +928,10 @@ for you on 68000 modules: **`M$Name` is a four-byte offset at byte 12**, not
 two, and names are **NUL-terminated**, not high-bit-terminated. Handle both
 conventions.
 
-**[3 of 6] Not every module has `M$Init`/`M$Term`.** Laser Lords makes it three:
+**[4 of 7] Not every module has `M$Init`/`M$Term`.** *(Letters makes it four:
+both of its programs read `0x6364695f` at offset 72 — the `cdi_` of
+`cdi_ctw` and `cdi_bumperanim` — so both have 72-byte headers.)* Laser Lords
+made it three:
 all five of its programs read `0x6364695f` at offset 72 — the ASCII `cdi_` of
 their own names — so all five have 72-byte headers. On Link the header ends at
 72 and the name string starts there, so reading offsets 72 and 76 as pointers
@@ -899,7 +980,15 @@ exactly, and Link's second executable is two (`Prgrm` plus a 128-byte `Data`
 module). A tiny module of type `$B` (Trap) next to the main program is normal:
 it is the shared-library / trap-handler mechanism.
 
-**Read the edition byte — and do not read it as a date.** Link's game module is
+**Read the edition byte at the right offset.** The table above, and the classic
+documentation, put it at byte **22**. On all five modules of *A Visit to Sesame
+Street: Letters* byte 22 is zero and byte 23 carries the value, so the field is
+a **16-bit big-endian word at offset 22** and a single-byte read at 22 reports
+every module on that disc as edition 0 — which would have reversed the
+paragraph below. `os9mod.py` reads the word; the table is the thing that was
+wrong.
+
+**And do not read the edition byte as a date.** Link's game module is
 edition 1 and its bumper is edition 7. Merlin's single module is edition 7, so
 the same number can belong to the game itself. **Laser Lords settles what it is
 not:** four of its five programs are edition 7, and their directory dates span
@@ -907,10 +996,16 @@ not:** four of its five programs are edition 7, and their directory dates span
 fifth program and all four Data modules are edition 1. The same value 7 appears
 on three unrelated discs across four years. A field that takes one value across
 thirteen months inside a build and repeats across four years between builds is
-a **revision count**, not a build date and not a role.
+a **revision count**, not a build date and not a role. *Letters* says it again
+from a third angle: its three modules live inside one file with one directory
+timestamp and are editions **7, 1 and 0**, and its `cdi_bumperanim` is edition
+7 nineteen days away from its `cdi_ctw`, which is also edition 7 — and so is
+Laser Lords' `cdi_bumperanim`, built a week earlier and 850 bytes larger.
 
-**[3 of 6]** **Look at the bytes immediately after the header, before any
-code.** *(Laser Lords is a fourth negative: between each header and `_cstart`
+**[3 of 7]** **Look at the bytes immediately after the header, before any
+code.** *(Letters is a fifth negative: between each of its five headers and
+`_cstart` there is the module name and nothing else. Laser Lords is a fourth
+negative: between each header and `_cstart`
 there is the module name and nothing else — no font, no author list. Which is
 still worth the look, because it is one of the five measurements that
 separates its two supplied modules from its four own ones.)*
@@ -929,11 +1024,15 @@ J. Piesing is Jon Piesing, of Philips' CD-i and interactive-TV standards work.
 **Grep every CD-i executable you meet for `Armendariz`.** The expectation when
 this was written was that it would appear in every disc linking the same
 library revision. Six discs later it has appeared on **exactly one** — Origami,
-1993 — so mark it **[1 of 6]** and treat the grep as a test whose interesting
-outcome is the negative. Two better fingerprints, measured across all six:
+1993 — so mark it **[1 of 7]** and treat the grep as a test whose interesting
+outcome is the negative. **The seventh disc is the strongest negative of the
+six**, because it is the oldest and an American Interactive Media title, which
+is where the Philips base program system would have been least surprising. Two
+better fingerprints, measured across all seven:
 
 ```
 disc        Can not  Can't  Stack Overflow  Armendariz  cdi_bpsys  _cstart  _chcodes  @(#)
+letters        -       4          4              -           -        4        4       -
 laserlords     1       4          5              -           -        4        4       -
 link           1       1          2              -           -        1        2       -
 origami        -       1          1              1           1        1        1       -
@@ -942,8 +1041,14 @@ merlin         -       1          1              -           -        1        1
 soccer         -       -          -              -           -        -        -       -
 ```
 
-**`_cstart` and `_chcodes` are 5 of 6** — every disc with a Microware C build —
-and `**** Stack Overflow ****` tracks them exactly. `@(#)` is **1 of 6**.
+**`_cstart` and `_chcodes` are 6 of 7** — every disc with a Microware C build —
+and `**** Stack Overflow ****` tracks them exactly. `@(#)` is **1 of 7**. The
+sixteen-byte `_cstart` prologue's earliest instance moves from 1992-08-13 to
+**1991-08-26**, and one of *Letters*' four copies of each of those four
+patterns is in 41 sectors that belong to no file: the previous night's build of
+its own executable, still on the pressing (`cdi-avisittosesamestreetletters-doc`
+chapter 08). **Count the fingerprints over the image and not only over the
+files** — the surplus copy is how that leftover was found.
 
 **A negative result is informative.** Merlin has nothing between its header and
 `_cstart` but the module name — no font, no author list —
@@ -954,10 +1059,13 @@ that name is not a failed grep, it is a finding: **this title used somebody
 else's engine.** Check what fills the gap before concluding the grep was
 wasted.
 
-**[3 of 6]** Laser Lords has neither, on any of its seven module files, and what
+**[4 of 7]** Laser Lords has neither, on any of its seven module files, and what
 fills its gap is a third answer again: **direct OS-9 and nothing else** — all
-five of its programs name the `math` trap handler and no library beyond it. So
-the absence has now meant three different things on three discs, and the
+five of its programs name the `math` trap handler and no library beyond it.
+*Letters* gives the same answer a year earlier: both its binaries name `math`
+and this title's own 212-byte `cdi_cv_timer` trap module, and nothing else. So
+two discs now answer the follow-up question the same way, which is the first
+time that has happened, and they are the two oldest. The
 follow-up question is still the one that pays. And The Apprentice has no
 `Armendariz` and no `cdi_bpsys` either, and
 what fills its gap is neither a Philips library nor a third-party one: a
@@ -1054,10 +1162,15 @@ thunk land them on the Microware runtime instead. A row of equally spaced
 
 ## 5b. The publisher's bumper is a shared asset — hash it
 
-**[2 of 6]** Discs published under the Philips banner may carry a bumper stream
+**[4 of 7]** Discs published under the Philips banner may carry a bumper stream
 that the publisher supplied as a finished file. It is not the studio's work, it
 is **pressed verbatim**, and it is therefore another free identity check of
 exactly the kind the head-region MD5 is.
+
+**There are two generations of two discs each**, and the second pair was found
+by the seventh pipeline running `cdirtf.py hash` on both discs and reading the
+two outputs side by side. The 1993/94 pair is below; the 1991/92 pair is the
+block after it.
 
 *The Apprentice* (The Vision Factory, Netherlands, 1994) and *Link: The Faces of
 Evil* (Animation Magic, USA, 1993) carry the same one. Not similar — the same
@@ -1098,27 +1211,103 @@ Two practical consequences:
 Merlin's Apprentice, published by the same company, ships no bumper stream at
 all, so this is not universal even within one publisher.
 
-### The 1992 bumper is a different object, and it is pressed twice
+### The 1991-92 bumper is a different object, it is pressed twice per disc, and it is on two discs
 
 *Laser Lords* (Philips Interactive Media of America, 1992) carries **two**
 bumpers, `/ntsc_bumper.rtf` and `/pal_bumper.rtf`, and neither is the one Link
-and The Apprentice share:
+and The Apprentice share. **And *A Visit to Sesame Street: Letters* (American
+Interactive Media, September 1991) carries the same two, byte for byte:**
 
-| | Link 1993 / Apprentice 1994 | Laser Lords 1992 |
+| stream | ch | coding | sectors | bytes | md5 |
+|---|---:|---|---:|---:|---|
+| NTSC descriptor | 15 | data | 1 | 2,048 | `314263f87cbd5b8701ddeadec6a9ff1d` |
+| NTSC video | 15 | CLUT4 | 213 | 495,012 | `c509b0972e089186151f671668b5bdd0` |
+| NTSC video | 16 | CLUT4 | 85 | 197,540 | `00512db8efb46fb7a38a0d70cf64a082` |
+| NTSC audio | 15 | Level A mono | 192 | 446,208 | `a6e41a0f87987c3f89f76c0c306b06e4` |
+| PAL descriptor | 15 | data | 1 | 2,048 | `8104f9d4fc7d1a425c87ca11aaec3f2f` |
+| PAL video | 15 | CLUT4 | 186 | 432,264 | `1bf862696a45851062818e9f83063c36` |
+| PAL video | 16 | CLUT4 | 97 | 225,428 | `ed2e4f02f289fc82a448f5f4cb8a1c41` |
+| PAL audio | 15 | Level A mono | 192 | 446,208 | `a6e41a0f87987c3f89f76c0c306b06e4` |
+
+**2,246,756 bytes identical across eleven months and eighteen days and two
+development houses**, and the audio md5 is the same in the NTSC and PAL files
+on both discs, so those 446,208 bytes are pressed four times across the pair.
+**Not one of those eight streams appears in either disc's `sha1-all.txt`**,
+because the two *files* differ: the 1991 disc adds a channel the 1992 one does
+not have.
+
+That addition is the interesting part. `Letters` carries, on **channel 17** and
+in both bumper files identically, a 384-byte CLUT7 palette in a data sector and
+40 sectors of CLUT7 video which render at **384 × 240** as a still reading
+`CHILDREN'S TELEVISION WORKSHOP`. So the shape is: *the publisher's animation,
+verbatim, plus a licensor's card on a channel of its own.* Expect that shape on
+any co-branded title of the period, and expect the card to be the only place a
+disc with no text files says who licensed it.
+
+And the file lengths still balance the way section 5b says they must:
+
+```
+              ch15 vid  ch16 vid  ch17 vid  audio  data  padding   sum
+   Letters NTSC   213       85        40      192     2     269     801
+   Letters PAL    186       97        40      192     2     284     801
+   Laser Lords NTSC 213      85         -      192     1     374     865
+   Laser Lords PAL  186      97         -      192     1     389     865
+```
+
+The 1991 disc carries 40 more content sectors in 64 fewer, and the padding
+absorbs all of it.
+
+The comparison against the 1993/94 pair:
+
+| | Link 1993 / Apprentice 1994 | Letters 1991 / Laser Lords 1992 |
 |---|---|---|
 | video, channel 15 | RL7, 121 sectors | **CLUT4** coding, 213 / 186 sectors |
 | video, channel 16 | DYUV picture, 40 sectors | **CLUT4** coding, 85 / 97 sectors |
-| audio, channel 15 | Level B stereo, 149 sectors | **Level A mono**, 192 sectors |
+| video, channel 17 | — | CLUT7 licensor card, 40 sectors, **Letters only** |
+| audio, channel 15 | Level B stereo, 149 sectors | **Level A mono**, 192 sectors, 10.24 s |
 | descriptor sector | `0xBABEFACE` + `cluts count filenum frame_sizes` | a count, a palette, a frame table — **no magic, no tag names** |
-| file length | 625 sectors | 865 sectors |
-| versions pressed | one | **two** |
+| file length | 625 sectors | 865 (Laser Lords) / 801 (Letters) |
+| versions pressed | one | **two**, NTSC and PAL |
+| shared bytes | 714,240, and only by accident (§12) | **2,246,756**, invisible to every hash list |
 
-So the publisher's bumper is a shared asset **within a generation, not across
-the collection**: between 1992 and 1993 the logo animation, its codec, its
-audio level, its container format and its length all changed. Grep for
-`babeface` on a new disc, and if it is absent look for the same three ideas —
-a count, a palette, a table of frame offsets — written without a header that
-names them.
+So the publisher's bumper is a shared asset **within a generation and not
+across the collection, and each generation is on two discs**: between 1992 and
+1993 the logo animation, its codec, its audio level, its container format and
+its length all changed. Grep for `babeface` on a new disc; if it is absent,
+**hash the streams before concluding anything**, because the absence marks the
+generation and not a dead end. The 1991/92 descriptor sector is the same 2,048
+bytes on both discs of its pair, and it has no magic — while the 1991 disc's
+*own* container, for its own files, does have one (`0x00001190`, next block).
+
+### The magic-less descriptor is the publisher's, not the platform's
+
+An earlier revision of this document asked whether the header-less 1992 bumper
+descriptor is the ancestor of Link's `0xBABEFACE`. **It is not, and the seventh
+disc answers it from underneath.** That descriptor is byte-identical on the
+1991 and 1992 discs, so it is one object and not a lineage; and the 1991 disc's
+own five real-time containers open with
+
+```
+0   u32   0x00001190       magic
+4   u32   size             total bytes used, header included
+8   u32   count            number of 16-byte records
+12  count x { u16 kind, u16 flags, u32 sector, u32 value, u32 aux }
+```
+
+— a magic, a size and a count, two years before the one with tag names. So a
+studio's container had a magic in September 1991 and the publisher's asset
+descriptor did not. **Grep any new CD-i disc for `00 00 11 90` at a
+sector-payload boundary**; it costs one pass, and on that disc it hits twelve
+times: once in each of two 2,048-byte `.map` files, and **twice in each of five
+real-time files — at the first sector and again about ten sectors before the
+last**. A stream that can only be read forwards writes its own index at both
+ends so that a program which has reached the end has it again without a seek.
+
+And the `sector` field of those records is a **seek table**: monotone, always
+less than the file's own sector count, and **186 of its 195 entries across five
+files land within one sector of a record boundary walked from the `EOR` bits**.
+The one file where it does not is the jukebox, which has nothing to seek to
+because its alternatives are selected by channel.
 
 **Two bumpers of identical length is a mechanism worth knowing.** Both Laser
 Lords files are 865 Form 2 sectors and the padding absorbs the difference:
@@ -1317,8 +1506,15 @@ direction: every file is named by one of the two executables and every name is
 on the disc. Whatever was cut from that game was cut before the final link.
 Origami's and Merlin's are clean too. Say so — it dates the cut.
 
-**[2 of 6] Names may live in a data file rather than in the binary.** *(Laser
-Lords does the opposite and it is worth one line: all fourteen of its world
+**[2 of 7] Names may live in a data file rather than in the binary.** *(Letters
+does the opposite too, and adds a warning: every one of its thirteen files is
+named by one of its two binaries, seven of them in one contiguous fifty-six-byte
+literal table in disc order — but `cdistrings.py`'s name filter needs three
+consecutive letters and therefore **drops `tv.rtf`**, which is the largest file
+on that disc, from the middle of that table. Section 6b already warns that a
+filter eats the first name of a cluster; it eats short names too. Check any
+two-letter stem by hand. Laser Lords does the opposite and it is worth one
+line: all fourteen of its world
 stream names sit as literals in one packed table in `cdi_tribes`, NUL-separated
 and in world order, with no `%` conversion and no digit stencil anywhere. A
 systematic sibling is a reason to check, not a reason to conclude.)* Merlin's
@@ -1399,7 +1595,9 @@ byte 3. This is free — decode it before trying widths or sample rates.
 **And decode it *against the type bits*, never alone.** The coding byte is
 meaningless without knowing whether the sector is audio, video, data or
 padding, and on a disc with enough streams the same value means several things
-at once. Laser Lords:
+at once. On *Letters*, coding `0x00` alone is 172,710 sectors — **60.3 % of the
+pressing** — and it is read four ways: Level B speech, container headers,
+bit-rate padding, and the publisher's CLUT4 logo. Laser Lords:
 
 ```
   type   code  sectors   means
@@ -1467,11 +1665,26 @@ which gives, for the values actually seen:
 0x11  Level A  stereo  37,800 Hz  8-bit
 ```
 
-**[1 of 6] Level A does get used, and only for eleven seconds.** Five discs
-passed through without a single `0x10` sector. Laser Lords has 384 of them —
-192 in each of its two bumpers, 11.70 s each — and none anywhere else. The one
-place on that disc that spends four times Level C's bandwidth is the
-publisher's logo; the game's own 6 h 34 m of speech is Level C mono throughout.
+**[2 of 7] Level A does get used, and only for ten seconds.** Five discs passed
+through without a single `0x10` sector. Laser Lords has 384 of them — 192 in
+each of its two bumpers — and *A Visit to Sesame Street: Letters* has the same
+384, in the same two bumpers, and they are **the same bytes** (§5b). Neither
+disc uses Level A anywhere else. The one place on either that spends four times
+Level C's bandwidth is the publisher's logo.
+
+**And the duration was wrong in this document for two revisions.** It said
+11.70 s per bumper, which is 2,304 samples a sector — every byte of the user
+data a sample, with no room for the sound-group headers. **A Level A sector is
+eighteen 128-byte sound groups exactly as a Level B or C sector is**: 16
+parameter bytes and 112 data bytes, and at 8 bits a data byte is one sample, so
+**2,016 samples a sector and 0.053333 s**. Measured on *Letters*: the parameter
+bytes of all eighteen groups of a Level A sector satisfy section 8's own test
+(`bytes 0-3 == 4-7` and `8-11 == 12-15`) in 18 of 18. So each bumper is
+**10.24 s** and the two of them are 20.48 s, not 23.4. It also cross-checks
+against the bandwidth: Level A mono is a quarter of the CD's 176,400 B/s, which
+is 18.75 sectors a second, and 37,800 / 2,016 = 18.75 exactly. At 2,304 it
+would be 16.4, which is not a ratio anything uses. `cdicensus.py` in
+`cdi-avisittosesamestreetletters-doc` has the corrected table.
 
 **Level A is the 8-bit one, so it is `0x10`/`0x11`, not `0x01`.** An earlier
 revision of this document called `0x01` Level A; it is Level B stereo. Link uses
@@ -1494,6 +1707,24 @@ graphics blitted into a 384-wide framebuffer, not display modes. Take the
 measured pitch over the expected one, and let the odd pitch tell you the object
 is not a full screen.
 
+**And the odd pitch can be bigger than the screen.** *A Visit to Sesame
+Street: Letters* renders its four location backgrounds at **640 × 244** —
+autocorrelation 0.6971 at 640 against a 0.074 baseline, with the harmonic at
+1,280 — which is wider than CD-i normal resolution and narrower than double,
+and it is a **panorama seen through a 384-pixel window**. Its run-length
+animation cels are 640 wide too (3,999 of 4,000 exact line ends, against 3,000
+of 4,000 at 384), and its hot-spot table works in a 1,280 × 480 space, which is
+that picture doubled. **Three independent measurements landing on one width is
+what a proved geometry looks like**, and none of the three is a display mode.
+
+**Its film is not a display mode either.** 105,104 DYUV sectors cut into
+eight-sector slots give 13,138 frames of **172 × 108** at 8 fps — 18,576 bytes
+of picture in an 18,592-byte slot, with the sixteen spare bytes zero on every
+frame. 172 is not a fraction of 384 and nothing in the container states where
+on the screen it goes. **A CD-i title may pick any width it likes and letterbox
+it in software**; the list of widths to try is a starting point and not a
+constraint.
+
 **[all]** **A change of coding byte inside one title marks a change of
 purpose.** Origami is Level C for all five narration tracks and Level B for
 exactly one channel in one file — which turns out to be the only music on the
@@ -1512,8 +1743,13 @@ assume the outlier exists: a title that never varies its audio is telling you
 something too, and here what it is telling you is that the music was authored
 as one batch (section 8).
 
-**When you find the odd coding byte out, you have found the thing that was worth
-twice the bandwidth.** On both 1993 discs it was the ending. **On Merlin it is
+**When you find the odd coding byte out, ask which way the trade went.** It is
+usually the thing that was worth twice the bandwidth — but on *Letters* it is
+the opposite: that disc is Level B mono across 55,295 sectors in five files and
+Level C mono in exactly one, `tv.rtf`, and Level C is **half** the sample rate.
+The file where the soundtrack was halved is the one whose video needs 64 of
+every 75 sectors. First disc of seven where the outlier is an economy rather
+than an extravagance, and the rule about *where* to look survives it intact. On both 1993 discs it was the ending. **On Merlin it is
 not** — the stereo sequence is the thirteenth of the fifteen animations in the
 file that holds the prologue and the interstitials, with two more after it. So
 the rule about where to look holds and the guess about what you will find does
@@ -1700,7 +1936,15 @@ bitmaps.
 
 ### Look for fixed slots
 
-**[3 of 6]** Laser Lords does it twice — its 95 DYUV stills occupy 40 sectors
+**[4 of 7]** *(Letters does it twice as well, and one of the two is the whole
+of its main content: its film is **8 sectors per frame, 18,592 bytes, of which
+172 × 108 = 18,576 are picture and the last 16 are zero on all 13,138 frames**;
+and each of its four location screens occupies a 68-sector slot holding one
+640 × 244 picture and 1,872 bytes of something else. The slot is proved
+without decoding anything — the video channel's LBA run is interrupted 31
+times and **all 31 interruptions fall between frames**. If a stream has gaps,
+check what they are aligned to before you check anything else.)* Laser Lords
+does it twice — its 95 DYUV stills occupy 40 sectors
 each with 800 bytes of slack in the last one, and the sixteen filenames in
 `cdi_space`'s missing-stream table sit in 20-byte slots NUL-padded. Both
 Soccer's sprites and Link's animation frames sit in
@@ -1814,9 +2058,10 @@ a whole disc.)*
 
 ### On a CD-i Ready disc the music may ship twice — find the table
 
-**[1 of 6]** *(Re-declared rather than rechecked: Laser Lords is not CD-i Ready
-and carries no CD-DA at all, so it cannot exercise this. The denominator moves
-and the numerator does not.)* The Apprentice carries its whole soundtrack in
+**[1 of 7]** *(Re-declared rather than rechecked, twice now: neither Laser
+Lords nor A Visit to Sesame Street: Letters is CD-i Ready and neither carries
+any CD-DA, so neither can exercise this. The denominator moves and the
+numerator does not.)* The Apprentice carries its whole soundtrack in
 **both** formats:
 22 Red Book CD-DA tracks (45.85 min, 73.9 % of the pressing) and 22 Level C
 stereo ADPCM channels across three real-time files (46.0 min). One to one,
@@ -1853,10 +2098,13 @@ music rather than a mistake in the reading.
 
 ### The interleave may be timed to the drive, and that is a check too
 
-**[1 of 6]** *(Re-declared: no CD-DA on Laser Lords, so no track length to
-compare a channel span against. The duration arithmetic itself does check out
-there — `luxor_v.rtf` channel 15 is 1,247 Level C mono sectors, the coding byte
-predicts 266.03 s and an actual ADPCM decode produces 266.03 s.)* A Level C
+**[1 of 7]** *(Re-declared: no CD-DA on Laser Lords or on Letters, so no track
+length to compare a channel span against. The duration arithmetic itself checks
+out on both — Laser Lords' `luxor_v.rtf` channel 15 is 1,247 Level C mono
+sectors, predicted 266.03 s and decoded 266.03 s; Letters' `misc.rtf` channel 8
+is 2,660 Level B mono sectors, predicted 283.73 s and decoded 283.73 s, and its
+`tv.rtf` channel 15 is 7,575 Level C mono sectors, predicted 1,616.00 s and
+decoded 1,616.00 s.)* A Level C
 stereo channel gets one sector in eight at 0.1067 s
 each, and the drive delivers 75 sectors a second — so a channel's **span in
 sectors** is its duration in 75ths of a second, which is also its length as a
@@ -1902,6 +2150,11 @@ lmusic.rtr           0   95,005     220,791,620     194,570,240
 lanim.rtr       40,391   62,184     227,236,384     210,073,600
 ```
 
+On *Letters* every one of the eight real-time files is Form 2 throughout except
+for its interleaved Form 1 data sectors, so the fiction is a flat 13.477 %:
+they declare 576,854,016 bytes across 281,667 sectors and those sectors hold
+654,594,108, understating by **77,740,092 B on a 673 MB disc**.
+
 On Laser Lords every one of the twenty-two real-time files is Form 2
 throughout, so the fiction is a flat 13.48 % across all of them: they declare
 586,166,272 bytes and their sectors hold 665,161,336. **The file system
@@ -1916,9 +2169,17 @@ slack. **When a file carries its own size field, use it as the check.**
 
 **[all]** Sectors tagged neither VIDEO nor AUDIO nor DATA are **bit-rate padding
 and carry nothing** — 19.5 % of Soccer's one real-time file, **24.1 % of the
-whole of Laser Lords**, 26.7 % of the whole of Origami, 38.3 % of the whole of
-Merlin, **49.6 % of the whole of Link**. Drop them; concatenate the rest at
-2,324 bytes each.
+whole of Laser Lords**, 26.7 % of the whole of Origami, **36.3 % of the whole
+of Letters**, 38.3 % of the whole of Merlin, **49.6 % of the whole of Link**.
+Drop them; concatenate the rest at 2,324 bytes each.
+
+**And say which denominator you used.** A census that walks every sector in the
+image counts the pre-file-system region, the tail and the inter-file gaps as
+untyped too. On *Letters* that is 108,544 untyped sectors — 37.909 % of the
+image — of which **4,593 belong to no file at all**, so the disc's own bit-rate
+padding is 103,951 sectors: **36.305 % of the image and 36.90 % of its
+real-time sectors**. The two figures answer different questions and only the
+second compares against another disc's design.
 
 Laser Lords is the lowest whole-disc figure of the five that are comparable,
 and the reason is the jukeboxes: its ten round-robin files run at 19–28 %
@@ -1995,7 +2256,7 @@ video a PAL machine never touches.
 
 ### Interleaved channels may be alternatives — a jukebox
 
-**[3 of 6]** Link's `lmusic.rtr` is the other pattern, and the tell is
+**[4 of 7]** Link's `lmusic.rtr` is the other pattern, and the tell is
 unmistakable: **channel *n*'s first sector is sector *n***, a perfect
 round-robin from the first byte of the file. Eight stereo music channels running
 simultaneously, of which the game listens to one.
@@ -2013,6 +2274,15 @@ So do not test for `channel n starts at sector n` literally. **Test whether the
 channels' first sectors form a contiguous run** — ascending or descending, and
 starting wherever the file's own header ends.
 
+**And Letters makes it four**, with one jukebox in eight files: `misc.rtf`,
+eight Level B mono channels descending 15 → 8, first sectors contiguous from
+file offset 5 to 12, 4,798.9 s of speech and 37.6 % padding against 71–81 % on
+the four files that are not jukeboxes. **Its first sectors do not start at file
+offset 0**, because sectors 0–4 carry the file's own container header on
+channel 0 — so `cdirtf.py starts` reported "not a round robin" until the test
+was made to exclude the header channel. **Run section 9's contiguity test on
+the channels that carry alternatives, not on every channel the file has.**
+
 **Laser Lords does it ten times in one file system**, and it is the design of
 the whole disc rather than one file in it: the seven `world_v.rtf` streams (16
 channels, 15 on one), `messages.rtf` (16), `help.rtf` (14) and `themes.rtf`
@@ -2029,7 +2299,7 @@ python tools/cdirtf.py starts luxor_v.rtf     (cdi-laserlords-doc)
   => a jukebox: switching costs no seek
 ```
 
-Three of six discs use the pattern, and the earliest one uses it for
+Four of seven discs use the pattern, and the earliest one uses it for
 **6 h 34 m of speech across 401 individually addressable records in one file**.
 The 1992 disc did it before either of the discs that were thought to have
 invented it.
@@ -2096,9 +2366,10 @@ rate; expect **368 × 272** at 25 fps for PAL CD-i DV, which is *not* the
 
 ## 9b. Tagged chunks, false positives, and code hiding in data
 
-**[2 of 6]** *(Re-declared: Laser Lords has no asset file to open — it has nine
-OS-9 modules, three text files and twenty-two streams, and not one chunked
-container in the file system.)* **Chunk 0 of an asset file is quite often 68000
+**[2 of 7]** *(Re-declared twice: neither Laser Lords nor Letters has a chunked
+asset file to open. Letters has five OS-9 modules in two files, a hot-spot
+table, two 2,048-byte descriptors and eight streams, and its containers are
+inside the streams rather than in the file system.)* **Chunk 0 of an asset file is quite often 68000
 code.** Link ships two
 dozen compiled subroutines per playfield; The Apprentice opens the first chunk
 of every level and screen container with a run of `60 00 xx xx` — `BRA.W`
@@ -2167,8 +2438,11 @@ Getting this wrong is easy in a specific way: a group's member table lives
 convincingly like a gap between groups. **If your "gaps" are all exactly
 `count x record_size`, they are not gaps.**
 
-**[2 of 6] And when the chain does not land, suspect alignment before you
-suspect the layout.** *(Re-declared: no chained container on Laser Lords. The
+**[2 of 7] And when the chain does not land, suspect alignment before you
+suspect the layout.** *(Re-declared: no chained container on Laser Lords or on
+Letters — the latter's `0x00001190` header is a flat record array with a size
+field that checks out on both files where the size is verifiable, and nothing
+chains. The
 nearest thing is the sixty-value frame table in its bumper descriptor, which is
 monotone within groups and whose referent is not established — an open question
 rather than a sample.)* The Apprentice's 45 `.dat` files hold `u16 count` then one
@@ -2215,30 +2489,30 @@ need to reverse before you can read most of it.
 
 ## 10. Baselines, so you can tell signal from noise
 
-Six very different discs, for comparison:
+Seven very different discs, for comparison:
 
-| | Ultra CD-i Soccer (1997) | Origami (1993) | Link: The Faces of Evil (1993) | Merlin's Apprentice (1995) | The Apprentice (1994) | **Laser Lords (1992)** |
-|---|---|---|---|---|---|---|
-| Track | 7,875 sectors (1:45), 2.4 % of a CD | 326,400 sectors (72:32), 98 % | 255,924 sectors (56:52), 77 % | 131,610 sectors (29:14), 39.5 % | **no data track** — 69,150-sector pregap of track 1 (19.9 %), plus 22 CD-DA tracks (73.9 %) | 290,955 sectors (64:39), **87.4 %** |
-| Entries | 12 dirs, 144 files, 10,635,729 B | 5 dirs, 46 files, 631,506,598 B | **0 dirs, 14 files** | **0 dirs, 18 files** | 2 dirs, 91 files — 69 CD-i files of 113,851,360 B, plus 22 CD-DA entries | **0 dirs, 33 files** — one of them the path table; 586,463,563 B declared, 665,161,336 B actually carried |
-| Pre-FS region | 2,269 sectors, 28.5 % of the image | 2,268 sectors, 0.7 % | 2,269 sectors, 0.9 % | 2,269 sectors, 1.7 % | 2,268 sectors, 0.8 % — **and an identical 2,250-sector copy after the last file** | 2,269 sectors, 0.8 % |
-| Head audio | 7.41 s + 8.31 s mono, L = R exactly | **byte-identical to Link and Merlin** | **byte-identical to Origami and Merlin** | **byte-identical to both 1993 discs** | **a third recording**: 8.21 s + 14.74 s, L = R exactly, peak 16,383 | **byte-identical to Link, Origami and Merlin — and nine months older than any of them** |
-| Tail padding | plain zeroes | plain zeroes, 15,770 sectors | plain zeroes; the 4 `0x20` sectors are rip damage, not padding | plain zeroes, 2,258 sectors | the head block again, then 9,032 sectors of CD-DA silence | plain zeroes, 2,255 sectors (5 of them rip damage, not pressing) |
-| Executable | 229,376 B, 2 modules | 82,720 B, 4 modules | 135,168 B, 1 module (+ a 12 KB bumper) | 139,264 B, 1 module, edition 7 | 23,236 B game module; 9 modules over 6 files | 20,528 B launcher + 133,234 B game; **9 modules over 7 files**, four of five edition 7 |
-| Symbols | none | none | **325 C function names in the binary** | **887, in a `.stb` file in the root** | **521, in a `.stb` file in `/CMDS/`** | none — no `.stb`, and no loose names either |
-| Streaming | one MPEG file | 79 % of the disc | 99.7 % of the bytes | 88.6 % of the disc | 69.5 % of the CD-i area, all of it music | 94 % of the disc, in 22 files |
-| Padding | 19.5 % of the one RTF | 26.7 % of the disc | **49.6 % of the disc** | 38.3 % of the disc | 23-68 % per RTF; **zero free sectors between the path table and the last file** | **24.1 % of the disc** — the lowest of the comparable four |
-| Compression | none, bar the run-length sprites | none, anywhere | RL7 for everything that moves, 10.7:1 | BOLT, on 54 % of the library, **1.17:1** | none, anywhere | unidentified — `NS07`, video coding `0x08`, 22 % of the disc, not decoded |
-| Graphics | raw CLUT bitmaps + palettes on disc | DYUV and CLUT7, real-time only | CLUT7 playfields, RL7 cels, one DYUV still | inside the BOLT container; frame codec unidentified | CLUT7 and CLUT8 in `.dat` containers, pitches 384 **and 320** | 95 DYUV stills at 384 × 240, CLUT4 in the bumpers; **no bitmap file anywhere** |
-| Palettes | 192/384/768 B, entry 0 `#00FF00` | **none on the disc at all** | 384 B inline, entry 0 `#FFFFFF` | 390 B BOLT members, 6 + 128 × 3 | 384 B and 768 B, entry 0 `#000000` | none on the disc; one 195-entry CLUT inside each bumper descriptor sector |
-| Audio | 12 effects, 10.2 s, Level C in AIFF-C | 5 languages, 3 h 57 m, raw | **100.8 min**, Levels B and C, raw | 47 min, Level B mono, raw | 46 min ADPCM, **all Level C stereo**, plus the same 46 min as CD-DA | **6 h 34 m**, Level C mono throughout, **plus 11.7 s of Level A** in each bumper |
-| Video | MPEG-1 368 × 272 | 40 files, 7 streams each, no MPEG | no MPEG; RL7, CLUT7, DYUV | no MPEG; 89 animations in 7 files | no MPEG; **no video streams of its own at all** | no MPEG; 95 stills, 94 animations undecoded |
-| All-zero files | 16, totalling 1,070,080 B | none | none | none | none | none |
-| Dangling path references | 8 | none | none | none | none — 20 templates cover all 56 assets exactly | **26**, of which **16 are `.rtf` names never pressed** |
-| Duplicated files | none | none | **the same 30 MB pressed 3× (11.5 %)** | **the same 8 MB pressed 3× (7.9 %)** | none; the **filler block** is pressed twice | none; but **one 11.94 s clip pressed 7×** and the bumper pressed twice (NTSC + PAL) |
-| Languages shipped | English only | five — one of them not on the box | English only | English only | English only | English only |
+| | Ultra CD-i Soccer (1997) | Origami (1993) | Link: The Faces of Evil (1993) | Merlin's Apprentice (1995) | The Apprentice (1994) | **Laser Lords (1992)** | **A Visit to Sesame Street: Letters (1991)** |
+|---|---|---|---|---|---|---|---|
+| Track | 7,875 sectors (1:45), 2.4 % of a CD | 326,400 sectors (72:32), 98 % | 255,924 sectors (56:52), 77 % | 131,610 sectors (29:14), 39.5 % | **no data track** — 69,150-sector pregap of track 1 (19.9 %), plus 22 CD-DA tracks (73.9 %) | 290,955 sectors (64:39), **87.4 %** | 286,330 sectors (63:37), **86.0 %** |
+| Entries | 12 dirs, 144 files, 10,635,729 B | 5 dirs, 46 files, 631,506,598 B | **0 dirs, 14 files** | **0 dirs, 18 files** | 2 dirs, 91 files — 69 CD-i files of 113,851,360 B, plus 22 CD-DA entries | **0 dirs, 33 files** — one of them the path table; 586,463,563 B declared, 665,161,336 B actually carried | **0 dirs, 14 files** — one of them the path table; **no text file at all** |
+| Pre-FS region | 2,269 sectors, 28.5 % of the image | 2,268 sectors, 0.7 % | 2,269 sectors, 0.9 % | 2,269 sectors, 1.7 % | 2,268 sectors, 0.8 % — **and an identical 2,250-sector copy after the last file** | 2,269 sectors, 0.8 % | 2,269 sectors, 0.8 % — and the **lead-in is plain zero, not scrambled zero** |
+| Head audio | 7.41 s + 8.31 s mono, L = R exactly | **byte-identical to Link and Merlin** | **byte-identical to Origami and Merlin** | **byte-identical to both 1993 discs** | **a third recording**: 8.21 s + 14.74 s, L = R exactly, peak 16,383 | **byte-identical to Link, Origami and Merlin — and nine months older than any of them** | **byte-identical to Laser Lords, Link, Origami and Merlin — and eleven and a half months older than any of them** |
+| Tail padding | plain zeroes | plain zeroes, 15,770 sectors | plain zeroes; the 4 `0x20` sectors are rip damage, not padding | plain zeroes, 2,258 sectors | the head block again, then 9,032 sectors of CD-DA silence | plain zeroes, 2,255 sectors (5 of them rip damage, not pressing) | plain zeroes, 2,264 sectors (2,250 of them past the volume space) |
+| Executable | 229,376 B, 2 modules | 82,720 B, 4 modules | 135,168 B, 1 module (+ a 12 KB bumper) | 139,264 B, 1 module, edition 7 | 23,236 B game module; 9 modules over 6 files | 20,528 B launcher + 133,234 B game; **9 modules over 7 files**, four of five edition 7 | 66,588 B in **3 modules**, plus a 12,288 B bumper player in 2; editions 7, 1, 0 |
+| Symbols | none | none | **325 C function names in the binary** | **887, in a `.stb` file in the root** | **521, in a `.stb` file in `/CMDS/`** | none — no `.stb`, and no loose names either | none — no `.stb`, no loose names |
+| Streaming | one MPEG file | 79 % of the disc | 99.7 % of the bytes | 88.6 % of the disc | 69.5 % of the CD-i area, all of it music | 94 % of the disc, in 22 files | **98.4 % of the disc**, in 8 files |
+| Padding | 19.5 % of the one RTF | 26.7 % of the disc | **49.6 % of the disc** | 38.3 % of the disc | 23-68 % per RTF; **zero free sectors between the path table and the last file** | **24.1 % of the disc** — the lowest of the comparable four | **36.3 % of the disc**; 9.2 % in the film and 72–81 % in the four location files |
+| Compression | none, bar the run-length sprites | none, anywhere | RL7 for everything that moves, 10.7:1 | BOLT, on 54 % of the library, **1.17:1** | none, anywhere | unidentified — `NS07`, video coding `0x08`, 22 % of the disc, not decoded | RL7 for the animation cels, at width **640**; the publisher's CLUT4 logo undecoded |
+| Graphics | raw CLUT bitmaps + palettes on disc | DYUV and CLUT7, real-time only | CLUT7 playfields, RL7 cels, one DYUV still | inside the BOLT container; frame codec unidentified | CLUT7 and CLUT8 in `.dat` containers, pitches 384 **and 320** | 95 DYUV stills at 384 × 240, CLUT4 in the bumpers; **no bitmap file anywhere** | **13,138 DYUV frames at 172 × 108**, 5 CLUT7 pictures — four of them **640 × 244** |
+| Palettes | 192/384/768 B, entry 0 `#00FF00` | **none on the disc at all** | 384 B inline, entry 0 `#FFFFFF` | 390 B BOLT members, 6 + 128 × 3 | 384 B and 768 B, entry 0 `#000000` | none on the disc; one 195-entry CLUT inside each bumper descriptor sector | 128-entry CLUT7 in the bumper streams' own data sectors; **none for the location screens** |
+| Audio | 12 effects, 10.2 s, Level C in AIFF-C | 5 languages, 3 h 57 m, raw | **100.8 min**, Levels B and C, raw | 47 min, Level B mono, raw | 46 min ADPCM, **all Level C stereo**, plus the same 46 min as CD-DA | **6 h 34 m**, Level C mono throughout, **plus 11.7 s of Level A** in each bumper | **2 h 05 m**, Level B mono throughout, Level C for the film, 20.5 s of Level A in the logo |
+| Video | MPEG-1 368 × 272 | 40 files, 7 streams each, no MPEG | no MPEG; RL7, CLUT7, DYUV | no MPEG; 89 animations in 7 files | no MPEG; **no video streams of its own at all** | no MPEG; 95 stills, 94 animations undecoded | no MPEG; **32 alphabet cartoons, 27 m 22 s at 8 fps** |
+| All-zero files | 16, totalling 1,070,080 B | none | none | none | none | none | none |
+| Dangling path references | 8 | none | none | none | none — 20 templates cover all 56 assets exactly | **26**, of which **16 are `.rtf` names never pressed** | none — 12 of 13 files named by a binary, the 13th by the descriptor |
+| Duplicated files | none | none | **the same 30 MB pressed 3× (11.5 %)** | **the same 8 MB pressed 3× (7.9 %)** | none; the **filler block** is pressed twice | none; but **one 11.94 s clip pressed 7×** and the bumper pressed twice (NTSC + PAL) | none; but **one 640 × 244 screen pressed four times** and the bumper pressed twice |
+| Languages shipped | English only | five — one of them not on the box | English only | English only | English only | English only | English only |
 
-The six discs bracket the format. Soccer is what a *game* looks like on CD-i
+The seven discs bracket the format. Soccer is what a *game* looks like on CD-i
 when the program owns its assets: small files, a big executable, everything
 loaded. Origami is what a *presentation* looks like: a tiny executable that owns
 nothing and streams every pixel, including every letter of every menu. Link is
@@ -2261,6 +2535,21 @@ Philips library at all. And it sits in the middle of the capacity range with no
 dead files, which is the combination the first three discs would not have
 predicted.
 
+**A Visit to Sesame Street: Letters is the seventh shape, and it is a place
+rather than a game.** Its program owns nothing and it streams almost
+everything, like Origami and Laser Lords — but what it streams is neither a
+presentation nor a story. Four painted rooms 640 pixels wide sit still until a
+child points at something, a 20 KB hot-spot table in half-pixel units says what
+may be pointed at, and a television inside the picture plays 27 minutes of
+alphabet cartoons at 172 × 108. **Four fifths of its four location files are
+empty sectors**, which on any other disc reads as waste and here reads as
+*waiting*: a real-time file is delivered at 1× whether or not a three-year-old
+is doing anything. And the same principle appears three times at three scales —
+eight speech channels permanently under the head, a container header written at
+both ends of every stream, and the street screen pressed into all four location
+files — so that no move the child can make costs a seek. Nothing else in the
+collection spends 190 MB on standing still.
+
 **Laser Lords is the sixth shape, and it is Link's shape a year early.** Its
 program owns nothing, its 33 files are 22 streams and 9 modules, and 94 % of the
 pressing is real-time. What is new is *why* it is interleaved: ten of its
@@ -2274,8 +2563,9 @@ finished in 1992.
 
 If your disc compresses something, has more than one directory level, ships
 palettes for CLUT data, uses MPEG, carries symbols, keeps its assets in a
-container with its own header, or hides its whole volume in a pregap, it is
-doing something at least one of these did not. **Carry the method forward, not
+container with its own header, hides its whole volume in a pregap, or spells
+something out in a picture because it has no text at all, it is doing something
+at least one of these did not. **Carry the method forward, not
 the numbers.**
 
 ### Count the languages yourself
@@ -2308,13 +2598,13 @@ round-robin (a jukebox, as on Link and Merlin).
    window is 2,250 sectors ending immediately before the path table, so the
    path table's LBA fixes the alignment. **Descramble it — always — and then
    hash it against the three known recordings before analysing anything**:
-   `a0ed87f2e98b43f91281d16390fb178b` (1992–95, four discs),
+   `a0ed87f2e98b43f91281d16390fb178b` (1991–95, five discs),
    `4e61f608e1f1455d9ad5b2a0615dbbd3` (The Apprentice, 1994) and
    `d1bc6b7dbed8abfd30df0ff4c7cada48` (Soccer, 1997). Those hashes are of the
    **audio**; a hash of the image bytes will never match one of them and will
-   look like a new recording. Four of six discs match the first outright.
+   look like a new recording. Five of seven discs match the first outright.
    **Hash the sectors after your last file too**: on one disc so far they are
-   the same block again. `sixdiscs.py head` does all six in one command.
+   the same block again. `sixdiscs.py head` does all seven in one command.
 3. Volume descriptor and path table; note the application identifier, the
    publisher and the data preparer.
 4. `cdifs.py list` / `map` / `extract`; note which entries have file number 1;
@@ -2350,24 +2640,45 @@ round-robin (a jukebox, as on Link and Merlin).
     many files the check closed on, not that it closed.**
 14. If the disc carries CD-DA, look for the table in the executable that maps
     tracks onto anything else, and cross-check the durations both ways.
+15. **Hash every stream, not every file, and compare against one sibling.**
+    `cdirtf.py hash` on your disc and on the nearest disc by date, read side by
+    side. On the seventh pipeline that was two commands and it found 2,246,756
+    bytes of publisher's bumper identical across eleven and a half months —
+    something no file-level list can see, on two discs whose files differ.
+16. **If a video stream has gaps in its channel's LBA run, check what they are
+    aligned to before you check anything else.** On *Letters* all thirty-one
+    gaps in the film's sector run fall between frames, which proves the frame
+    size without decoding a pixel — and the same gaps turn out to be the cuts
+    between its thirty-two segments.
 
 Write down what does *not* resolve. Half of what makes a disc interesting is the
 list of things that are measurably odd and not yet explained.
+
+**And on a disc with no text, read the pictures for words.** *A Visit to Sesame
+Street: Letters* has no copyright file, no abstract, no bibliography, no symbol
+table and no `printf`; the only two human names on it are in the data-preparer
+field, and the only place its own abbreviation is expanded is a 384 × 240 CLUT7
+still inside the publisher's bumper reading `CHILDREN'S TELEVISION WORKSHOP`.
+Typos live in the fields that were typed; on a disc for people who cannot read,
+so does everything else.
 
 ---
 
 ## 12. The hash lists, and what they cannot see
 
 **[all]** Every disc repository now publishes `notes/sha1-all.txt`: one line per
-file, `sha1  size  path`, generated for all six at once by
-`cdi-laserlords-doc/tools/sixdiscs.py write`. **324 records over six discs.**
+file, `sha1  size  path`, generated for all seven at once by
+`cdi-avisittosesamestreetletters-doc/tools/sixdiscs.py write`. **338 records
+over seven discs.**
 Before the sixth pipeline there were none, and the cross-disc comparison chapter
 of five documents could only say it had not been attempted.
 
-Comparing all 324 finds **two** crossings:
+Comparing all 338 finds **two** crossings, and the seventh disc adds one line
+to one of them and nothing else:
 
 ```
-6fa9eb5c50bcb6e9e6b82b51128ad52649a0e186   10 B      Laser Lords, Link, Merlin  /path_tbl
+6fa9eb5c50bcb6e9e6b82b51128ad52649a0e186   10 B      Letters, Laser Lords,
+                                                     Link, Merlin  /path_tbl
 fb36018b660928ced83f5ae22d3bb2b7dced89bc   1,280,000 B  Link /bumper.rtf,
                                                         Apprentice /CMDS/philips.rtf
 ```
@@ -2382,10 +2693,17 @@ Meanwhile, invisible to every one of those 324 records:
 
 | shared thing | size | in a hash list? |
 |---|---:|---|
-| the 1992–95 head recording, 4 discs | 5,229,000 B | **no** — belongs to no file |
+| the 1991–95 head recording, **5 discs** | 5,229,000 B | **no** — belongs to no file |
+| **the 1991–92 bumper's eight streams, 2 discs** | **2,246,756 B** | **no** — the two files differ in length |
 | the Philips bumper streams, 2 discs | 714,240 B | **by accident** — the fiction truncated the read |
 | Laser Lords' two bumpers' audio | 446,208 B | **no** — a stream inside two files of unequal content |
-| the path table, 3 discs | 10 B | yes |
+| Letters' street screen, 4 files on 1 disc | 474,096 B | **no** — inside four files of unequal content |
+| the path table, **4 discs** | 10 B | yes |
+
+**7,475,756 bytes are shared across discs and invisible to all 338 records; ten
+bytes are shared and visible.** The ratio got a third worse the day the seventh
+disc was measured, and it got worse because of the single largest cross-disc
+result the branch has produced.
 
 **A file-level hash list is structurally blind to both kinds of sharing this
 platform actually does.** One is *below* the file system and one is *inside*
@@ -2400,7 +2718,11 @@ share a third-party component* — is restated for this branch:
 
 and the instrument that follows is a hash per
 `(file, channel, submode, coding)` run — `cdirtf.py hash` — not a hash per
-file. Publish both on your disc; they answer different questions.
+file. **Run it on your disc and on one sibling and read the two outputs side by
+side**; that is the whole of how the 1991/92 bumper pair was found, and it took
+one command on each disc. Publish both lists; they answer different questions,
+and **no repository yet publishes the second one.** The eighth pipeline should
+write `notes/streams.txt` beside `notes/sha1-all.txt`.
 
 **One caveat when comparing across branches.** A CD-i record's size field is
 the directory's declared size, which on Form 2 understates the payload by
