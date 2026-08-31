@@ -31,12 +31,14 @@ grepped afterwards.
 | 8 | Green Book ADPCM, wrapped and raw, and the duration arithmetic |
 | 9 | Real-time files: channels, records, triggers, and why discs are half empty |
 | 9b | Tagged chunks, false positives, code hiding in data, and validating a container by chaining it |
-| 10 | Baselines for five discs, side by side |
+| 10 | Baselines for six discs, side by side |
 | 11 | The order of work that worked |
+| 12 | The six `sha1-all.txt` lists, and what a file-level hash cannot see |
 
 Findings confirmed on every disc so far are marked **[all]**; those confirmed on
-fewer are marked **[N of 5]** (older marks read **[N of 4]** and predate the
-fifth disc). Everything else is named after the disc it came
+fewer are marked **[N of 6]**. Every mark now reads `of 6`: the sixth pipeline
+re-derived the ones its disc exercises and **re-declared in place**, with a note
+saying so, the ones it cannot. Everything else is named after the disc it came
 from, and is the kind of thing to test rather than assume.
 
 ## Discs it is drawn from
@@ -52,37 +54,46 @@ the short form; the index is where the prose is.
 | [Link: The Faces of Evil](https://github.com/vs-sr-dev/cdi-linkthefacesofevil-doc) | 1993 | Animation Magic / Philips Interactive Media of America, USA — a streaming game: 14 files in a flat root, 77 % of a CD, half of it deliberately empty |
 | [Merlin's Apprentice](https://github.com/vs-sr-dev/cdi-merlinsapprentice-doc) | 1995 | Philips Interactive Media of America, USA — a puzzle game on a third-party runtime: 18 files in a flat root, 39.5 % of a CD, and the linker's symbol file left in the root |
 | [The Apprentice](https://github.com/vs-sr-dev/cdi-theapprentice-doc) | 1994 | The Vision Factory, Netherlands — a platform game on a **CD-i Ready** disc: the whole volume hides in track 1's pregap, 74 % of the pressing is Red Book audio, and the soundtrack ships a second time as ADPCM |
+| [Laser Lords](https://github.com/vs-sr-dev/cdi-laserlords-doc) | **1992** | Spinnaker Software / American Interactive Media, published by Philips Interactive Media of America, USA — the oldest disc here by a full year: 33 files in a flat root, 87 % of a CD, and **ten jukebox streams carrying 6 h 34 m of speech on sixteen parallel channels** |
 
-The five bracket the format: one disc where the program owns its assets, one
+The six bracket the format: one disc where the program owns its assets, one
 where it owns nothing and streams every pixel, one hybrid that streams its level
 code as well as its pictures, one that owns everything but keeps it inside a
-single 8 MB container it did not write itself, and one that is not a data disc
-at all.
+single 8 MB container it did not write itself, one that is not a data disc at
+all, and one from a year before any of them that had already finished the
+streaming idiom the others use.
 
 ## The result that made this repository worth splitting out
 
-Sectors in front of the file system belong to no file, and on all five discs
-they resolve to real recorded audio. On **three** of them — different
-developers, different publishers, different continents, and now two years apart
-— that audio is **byte-identical**:
+Sectors in front of the file system belong to no file, and on all six discs
+they resolve to real recorded audio. On **four** of them — different
+developers, different publishers, different continents, two and a half years
+apart — that audio is **byte-identical**:
 
 ```
-Link     1993   sectors 19-2268   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
-Origami  1993   sectors 18-2267   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
-Merlin   1995   sectors 19-2268   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
+Laser Lords  1992   sectors 19-2268   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
+Link         1993   sectors 19-2268   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
+Origami      1993   sectors 18-2267   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
+Merlin       1995   sectors 19-2268   5,229,000 B   md5 a0ed87f2e98b43f91281d16390fb178b
 ```
 
 29.6 seconds at 44,100 Hz, two takes, a fundamental drifting around 170 Hz. It
-is an artefact of the CD-i authoring chain, not title content, and it was still
-being written onto masters in January 1995. The 1997 disc carries a different
+is an artefact of the CD-i authoring chain, not title content, and the window it
+covers is **1992-08-31 to 1995-01-31**. The 1997 disc carries a different
 recording in the same place, and **The Apprentice, in 1994, carries a third**
 (`4e61f608e1f1455d9ad5b2a0615dbbd3`) — so date does not predict which one you
 get, and it writes the block **twice**, head and tail.
 
+On Laser Lords the identity does not stop at the region: **2,269 of the first
+2,270 sectors are byte-identical to Link's, and the one that differs is the
+volume descriptor.**
+
 No pipeline could have found that alone. **Hashing the head region of a new disc
 against those MD5s is a thirty-second check**, it has now answered the question
-outright four times, and it is exactly the kind of thing that has to live in one
-place to be useful.
+outright five times, and it is exactly the kind of thing that has to live in one
+place to be useful. One warning that cost the sixth pipeline's briefing its
+headline: **those MD5s are of the descrambled audio, not of the bytes in the
+image.** Compare like with like, or the answer is always "a new recording".
 
 A second check of the same shape has since turned up: the **Philips bumper**
 that opens a licensed disc is a finished asset the publisher handed out, and it
@@ -91,9 +102,19 @@ one 384 x 240 DYUV picture — are byte-identical between a 1993 disc made in th
 USA and a 1994 disc made in the Netherlands. Section 5b has the hashes.
 
 Underneath it, the mechanism: the authoring system wrote sector headers over a
-CD-DA stream, destroying **seven stereo frames — 28 bytes — per sector**
-(sync + header + subheader, plus four bytes zeroed at the EDC position). Section
-2 has the measurement.
+CD-DA stream, destroying **six stereo frames — 24 bytes — per sector**
+(sync + header + subheader). *Three revisions of this document said seven frames
+and 28 bytes; the sixth pipeline settled it with a control the document had
+never run, and Laser Lords corroborates it by carrying 2,250 correctly computed
+EDCs in the field that was supposed to have been overwritten.* Section 2 has the
+measurement and the control.
+
+And a third check of the same shape, new in section 12: **every disc repository
+now publishes `notes/sha1-all.txt`** — 324 records over six discs, generated for
+all six at once. Comparing them finds two crossings, one of which is a ten-byte
+path table, while four discs share five megabytes that no file-level list can
+ever contain. On this platform the unit of sharing is the *stream* and the
+*pre-file-system region*, not the directory entry.
 
 ## Contributing from a pipeline
 
@@ -101,11 +122,15 @@ When a new title turns up something about the *format* rather than the title:
 
 1. Add it to the relevant section here rather than to the title's repository.
 2. Mark it **[all]** or **[2 of N]** only if you have actually checked the other
-   discs. Otherwise name the disc it came from.
+   discs. Otherwise name the disc it came from. **And move every existing mark
+   onto the new denominator** — re-derive the ones your disc exercises and
+   re-declare the rest in place with a note. Two sessions of postponing a mark
+   turn it into furniture.
 3. If it contradicts what is already written, **correct the text and say so in
    place** — there are several such corrections in sections 2, 5 and 7a, and all
    of them are more useful with the history attached than without.
-4. Update the baseline table in section 10 and the order of work in section 11.
+4. Update the baseline table in section 10, the order of work in section 11,
+   and publish `notes/sha1-all.txt` for your disc (section 12).
 
 State what is measured and what is inferred, and keep the measurements in the
 document. Half of what makes a disc interesting is the list of things that are
